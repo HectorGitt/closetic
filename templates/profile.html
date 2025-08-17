@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>User Profile - Fashion Check</title>
+		<link
+			href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+			rel="stylesheet"
+		/>
+		<link
+			href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+			rel="stylesheet"
+		/>
+		<style>
+			.profile-card {
+				border: none;
+				box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+				border-radius: 10px;
+			}
+			.style-chip {
+				display: inline-block;
+				padding: 5px 12px;
+				margin: 3px;
+				background: #e9ecef;
+				border-radius: 20px;
+				font-size: 0.9em;
+				cursor: pointer;
+				transition: all 0.3s ease;
+			}
+			.style-chip.selected {
+				background: #007bff;
+				color: white;
+			}
+			.color-swatch {
+				width: 30px;
+				height: 30px;
+				border-radius: 50%;
+				display: inline-block;
+				margin: 5px;
+				border: 2px solid #ddd;
+				cursor: pointer;
+				transition: all 0.3s ease;
+			}
+			.color-swatch.selected {
+				border-color: #007bff;
+				transform: scale(1.1);
+			}
+			.btn-fashion {
+				background: linear-gradient(45deg, #667eea, #764ba2);
+				border: none;
+				color: white;
+			}
+			.btn-fashion:hover {
+				background: linear-gradient(45deg, #764ba2, #667eea);
+				color: white;
+			}
+			.history-item {
+				border-left: 3px solid #007bff;
+				padding-left: 15px;
+				margin-bottom: 20px;
+			}
+		</style>
+	</head>
+	<body>
+		<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+			<div class="container">
+				<a class="navbar-brand" href="/">
+					<i class="fas fa-tshirt me-2"></i>Fashion Check
+				</a>
+				<div class="navbar-nav ms-auto">
+					<a class="nav-link" href="/">Home</a>
+					<a class="nav-link" href="/fashion/analyze"
+						>Upload Analysis</a
+					>
+					<a class="nav-link" href="/fashion/camera">Live Camera</a>
+				</div>
+			</div>
+		</nav>
+
+		<div class="container my-5">
+			<div class="row">
+				<!-- Profile Setup -->
+				<div class="col-md-8">
+					<div class="card profile-card mb-4">
+						<div class="card-header">
+							<h5 class="mb-0">
+								<i class="fas fa-user-circle me-2"></i>Style
+								Preferences
+							</h5>
+						</div>
+						<div class="card-body">
+							<form id="preferencesForm">
+								<div class="row">
+									<div class="col-md-6">
+										<div class="mb-3">
+											<label
+												for="username"
+												class="form-label"
+												>Username</label
+											>
+											<input
+												type="text"
+												class="form-control"
+												id="username"
+												placeholder="Enter your username"
+												required
+											/>
+										</div>
+									</div>
+									<div class="col-md-6">
+										<div class="mb-3">
+											<label
+												for="bodyType"
+												class="form-label"
+												>Body Type (Optional)</label
+											>
+											<select
+												class="form-select"
+												id="bodyType"
+											>
+												<option value="">
+													Select body type
+												</option>
+												<option value="pear">
+													Pear
+												</option>
+												<option value="apple">
+													Apple
+												</option>
+												<option value="hourglass">
+													Hourglass
+												</option>
+												<option value="rectangle">
+													Rectangle
+												</option>
+												<option
+													value="inverted-triangle"
+												>
+													Inverted Triangle
+												</option>
+											</select>
+										</div>
+									</div>
+								</div>
+
+								<div class="mb-3">
+									<label class="form-label"
+										>Style Preference</label
+									>
+									<div id="stylePreferences">
+										<span
+											class="style-chip"
+											data-style="casual"
+											>Casual</span
+										>
+										<span
+											class="style-chip"
+											data-style="formal"
+											>Formal</span
+										>
+										<span
+											class="style-chip"
+											data-style="trendy"
+											>Trendy</span
+										>
+										<span
+											class="style-chip"
+											data-style="classic"
+											>Classic</span
+										>
+										<span
+											class="style-chip"
+											data-style="bohemian"
+											>Bohemian</span
+										>
+										<span
+											class="style-chip"
+											data-style="minimalist"
+											>Minimalist</span
+										>
+										<span
+											class="style-chip"
+											data-style="edgy"
+											>Edgy</span
+										>
+										<span
+											class="style-chip"
+											data-style="romantic"
+											>Romantic</span
+										>
+									</div>
+								</div>
+
+								<div class="mb-3">
+									<label class="form-label"
+										>Preferred Colors</label
+									>
+									<div id="colorPreferences">
+										<span
+											class="color-swatch"
+											style="background-color: #000000"
+											data-color="black"
+										></span>
+										<span
+											class="color-swatch"
+											style="
+												background-color: #ffffff;
+												border-color: #000;
+											"
+											data-color="white"
+										></span>
+										<span
+											class="color-swatch"
+											style="background-color: #808080"
+											data-color="gray"
+										></span>
+										<span
+											class="color-swatch"
+											style="background-color: #000080"
+											data-color="navy"
+										></span>
+										<span
+											class="color-swatch"
+											style="background-color: #0066cc"
+											data-color="blue"
+										></span>
+										<span
+											class="color-swatch"
+											style="background-color: #ff0000"
+											data-color="red"
+										></span>
+										<span
+											class="color-swatch"
+											style="background-color: #800080"
+											data-color="purple"
+										></span>
+										<span
+											class="color-swatch"
+											style="background-color: #008000"
+											data-color="green"
+										></span>
+										<span
+											class="color-swatch"
+											style="background-color: #ffff00"
+											data-color="yellow"
+										></span>
+										<span
+											class="color-swatch"
+											style="background-color: #ffa500"
+											data-color="orange"
+										></span>
+										<span
+											class="color-swatch"
+											style="background-color: #ffc0cb"
+											data-color="pink"
+										></span>
+										<span
+											class="color-swatch"
+											style="background-color: #a52a2a"
+											data-color="brown"
+										></span>
+									</div>
+								</div>
+
+								<div class="mb-3">
+									<label class="form-label"
+										>Occasion Types</label
+									>
+									<div id="occasionTypes">
+										<span
+											class="style-chip"
+											data-occasion="work"
+											>Work</span
+										>
+										<span
+											class="style-chip"
+											data-occasion="casual"
+											>Casual</span
+										>
+										<span
+											class="style-chip"
+											data-occasion="party"
+											>Party</span
+										>
+										<span
+											class="style-chip"
+											data-occasion="formal"
+											>Formal Events</span
+										>
+										<span
+											class="style-chip"
+											data-occasion="date"
+											>Date Night</span
+										>
+										<span
+											class="style-chip"
+											data-occasion="vacation"
+											>Vacation</span
+										>
+										<span
+											class="style-chip"
+											data-occasion="gym"
+											>Gym/Sports</span
+										>
+									</div>
+								</div>
+
+								<div class="mb-3">
+									<label for="budgetRange" class="form-label"
+										>Budget Range (Optional)</label
+									>
+									<select
+										class="form-select"
+										id="budgetRange"
+									>
+										<option value="">
+											Select budget range
+										</option>
+										<option value="budget">
+											Budget-friendly ($0-50)
+										</option>
+										<option value="moderate">
+											Moderate ($50-150)
+										</option>
+										<option value="premium">
+											Premium ($150-500)
+										</option>
+										<option value="luxury">
+											Luxury ($500+)
+										</option>
+									</select>
+								</div>
+
+								<button
+									type="submit"
+									class="btn btn-fashion w-100"
+								>
+									<i class="fas fa-save me-2"></i>Save
+									Preferences
+								</button>
+							</form>
+						</div>
+					</div>
+
+					<!-- Personal Style Guide -->
+					<div
+						class="card profile-card"
+						id="styleGuideCard"
+						style="display: none"
+					>
+						<div class="card-header bg-success text-white">
+							<h5 class="mb-0">
+								<i class="fas fa-star me-2"></i>Your Personal
+								Style Guide
+							</h5>
+						</div>
+						<div class="card-body">
+							<div id="personalStyleGuide"></div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Sidebar -->
+				<div class="col-md-4">
+					<!-- Quick Actions -->
+					<div class="card profile-card mb-4">
+						<div class="card-header">
+							<h6 class="mb-0">
+								<i class="fas fa-bolt me-2"></i>Quick Actions
+							</h6>
+						</div>
+						<div class="card-body">
+							<button
+								class="btn btn-outline-primary w-100 mb-2"
+								id="wardrobeBuilderBtn"
+								disabled
+							>
+								<i class="fas fa-home me-2"></i>Build Wardrobe
+							</button>
+							<button
+								class="btn btn-outline-success w-100 mb-2"
+								id="personalAnalysisBtn"
+								disabled
+							>
+								<i class="fas fa-user-check me-2"></i>Personal
+								Analysis
+							</button>
+							<a
+								href="/fashion/analyze"
+								class="btn btn-outline-info w-100"
+							>
+								<i class="fas fa-camera me-2"></i>Analyze Outfit
+							</a>
+						</div>
+					</div>
+
+					<!-- Style Tips -->
+					<div class="card profile-card">
+						<div class="card-header">
+							<h6 class="mb-0">
+								<i class="fas fa-lightbulb me-2"></i>Style Tips
+							</h6>
+						</div>
+						<div class="card-body">
+							<div id="styleTips">
+								<div class="alert alert-info">
+									<small
+										><strong>Tip:</strong> Set up your
+										preferences to get personalized style
+										recommendations!</small
+									>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Fashion History -->
+			<div class="row mt-4" id="historySection" style="display: none">
+				<div class="col-md-12">
+					<div class="card profile-card">
+						<div class="card-header">
+							<h5 class="mb-0">
+								<i class="fas fa-history me-2"></i>Fashion
+								Analysis History
+							</h5>
+						</div>
+						<div class="card-body">
+							<div id="fashionHistory">
+								<p class="text-muted">
+									No analysis history yet. Start analyzing
+									your outfits to see your fashion journey!
+								</p>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Wardrobe Builder Modal -->
+		<div class="modal fade" id="wardrobeModal" tabindex="-1">
+			<div class="modal-dialog modal-lg">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">
+							<i class="fas fa-home me-2"></i>Your Personalized
+							Wardrobe Plan
+						</h5>
+						<button
+							type="button"
+							class="btn-close"
+							data-bs-dismiss="modal"
+						></button>
+					</div>
+					<div class="modal-body">
+						<div id="wardrobePlanContent">
+							<div class="text-center">
+								<i
+									class="fas fa-spinner fa-spin fa-2x mb-2"
+								></i>
+								<p>Building your wardrobe plan...</p>
+							</div>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button
+							type="button"
+							class="btn btn-secondary"
+							data-bs-dismiss="modal"
+						>
+							Close
+						</button>
+						<button type="button" class="btn btn-primary">
+							Save Wardrobe Plan
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+		<script>
+			let selectedStyle = "";
+			let selectedColors = [];
+			let selectedOccasions = [];
+			let currentUsername = "";
+
+			// Initialize event listeners
+			document.addEventListener("DOMContentLoaded", function () {
+				setupStyleSelection();
+				setupColorSelection();
+				setupOccasionSelection();
+				setupFormSubmission();
+				loadExistingPreferences();
+			});
+
+			function setupStyleSelection() {
+				document
+					.querySelectorAll("#stylePreferences .style-chip")
+					.forEach((chip) => {
+						chip.addEventListener("click", function () {
+							// Remove previous selection
+							document
+								.querySelectorAll(
+									"#stylePreferences .style-chip"
+								)
+								.forEach((c) => c.classList.remove("selected"));
+							// Add selection to clicked chip
+							this.classList.add("selected");
+							selectedStyle = this.dataset.style;
+						});
+					});
+			}
+
+			function setupColorSelection() {
+				document
+					.querySelectorAll("#colorPreferences .color-swatch")
+					.forEach((swatch) => {
+						swatch.addEventListener("click", function () {
+							const color = this.dataset.color;
+							if (this.classList.contains("selected")) {
+								this.classList.remove("selected");
+								selectedColors = selectedColors.filter(
+									(c) => c !== color
+								);
+							} else {
+								this.classList.add("selected");
+								selectedColors.push(color);
+							}
+						});
+					});
+			}
+
+			function setupOccasionSelection() {
+				document
+					.querySelectorAll("#occasionTypes .style-chip")
+					.forEach((chip) => {
+						chip.addEventListener("click", function () {
+							const occasion = this.dataset.occasion;
+							if (this.classList.contains("selected")) {
+								this.classList.remove("selected");
+								selectedOccasions = selectedOccasions.filter(
+									(o) => o !== occasion
+								);
+							} else {
+								this.classList.add("selected");
+								selectedOccasions.push(occasion);
+							}
+						});
+					});
+			}
+
+			function setupFormSubmission() {
+				document
+					.getElementById("preferencesForm")
+					.addEventListener("submit", async function (e) {
+						e.preventDefault();
+
+						const username =
+							document.getElementById("username").value;
+						const bodyType =
+							document.getElementById("bodyType").value;
+						const budgetRange =
+							document.getElementById("budgetRange").value;
+
+						if (
+							!username ||
+							!selectedStyle ||
+							selectedColors.length === 0 ||
+							selectedOccasions.length === 0
+						) {
+							alert(
+								"Please fill in username, select a style preference, at least one color, and one occasion type."
+							);
+							return;
+						}
+
+						const preferences = {
+							style_preference: selectedStyle,
+							color_preferences: selectedColors,
+							body_type: bodyType,
+							occasion_types: selectedOccasions,
+							budget_range: budgetRange,
+						};
+
+						try {
+							const response = await fetch(
+								`/users/preferences?username=${encodeURIComponent(
+									username
+								)}`,
+								{
+									method: "POST",
+									headers: {
+										"Content-Type": "application/json",
+									},
+									body: JSON.stringify(preferences),
+								}
+							);
+
+							const result = await response.json();
+
+							if (response.ok) {
+								currentUsername = username;
+								displayPersonalStyleGuide(
+									result.personal_style_guide
+								);
+								enableQuickActions();
+								updateStyleTips();
+								showSuccess("Preferences saved successfully!");
+							} else {
+								throw new Error(
+									result.detail ||
+										"Failed to save preferences"
+								);
+							}
+						} catch (error) {
+							console.error("Error saving preferences:", error);
+							alert("Error saving preferences: " + error.message);
+						}
+					});
+			}
+
+			function displayPersonalStyleGuide(styleGuide) {
+				const guideCard = document.getElementById("styleGuideCard");
+				const guideContent =
+					document.getElementById("personalStyleGuide");
+
+				let html = "";
+
+				if (styleGuide.raw_guide) {
+					html = `<div class="alert alert-success">${styleGuide.raw_guide.replace(
+						/\n/g,
+						"<br>"
+					)}</div>`;
+				} else {
+					if (styleGuide.style_principles) {
+						html += `<div class="mb-3">
+                        <h6><i class="fas fa-star me-2"></i>Your Style Principles</h6>
+                        <p>${styleGuide.style_principles}</p>
+                    </div>`;
+					}
+
+					if (styleGuide.essential_pieces) {
+						html += `<div class="mb-3">
+                        <h6><i class="fas fa-tshirt me-2"></i>Essential Wardrobe Pieces</h6>
+                        <p>${styleGuide.essential_pieces}</p>
+                    </div>`;
+					}
+
+					if (styleGuide.color_palette) {
+						html += `<div class="mb-3">
+                        <h6><i class="fas fa-palette me-2"></i>Your Color Palette</h6>
+                        <p>${styleGuide.color_palette}</p>
+                    </div>`;
+					}
+
+					if (styleGuide.styling_tips) {
+						html += `<div class="mb-3">
+                        <h6><i class="fas fa-lightbulb me-2"></i>Styling Tips</h6>
+                        <p>${styleGuide.styling_tips}</p>
+                    </div>`;
+					}
+				}
+
+				guideContent.innerHTML = html;
+				guideCard.style.display = "block";
+			}
+
+			function enableQuickActions() {
+				document.getElementById("wardrobeBuilderBtn").disabled = false;
+				document.getElementById("personalAnalysisBtn").disabled = false;
+
+				// Setup wardrobe builder
+				document
+					.getElementById("wardrobeBuilderBtn")
+					.addEventListener("click", async function () {
+						const modal = new bootstrap.Modal(
+							document.getElementById("wardrobeModal")
+						);
+						modal.show();
+
+						try {
+							const response = await fetch(
+								`/users/wardrobe-builder/${encodeURIComponent(
+									currentUsername
+								)}`
+							);
+							const result = await response.json();
+
+							if (response.ok) {
+								displayWardrobePlan(result.wardrobe_plan);
+							} else {
+								throw new Error(
+									result.detail || "Failed to build wardrobe"
+								);
+							}
+						} catch (error) {
+							console.error("Error building wardrobe:", error);
+							document.getElementById(
+								"wardrobePlanContent"
+							).innerHTML = `<div class="alert alert-danger">Error building wardrobe: ${error.message}</div>`;
+						}
+					});
+			}
+
+			function displayWardrobePlan(plan) {
+				const content = document.getElementById("wardrobePlanContent");
+
+				let html = "";
+
+				if (plan.raw_plan) {
+					html = `<div class="alert alert-info">${plan.raw_plan.replace(
+						/\n/g,
+						"<br>"
+					)}</div>`;
+				} else {
+					if (plan.essentials) {
+						html += `<div class="mb-3">
+                        <h6><i class="fas fa-list me-2"></i>Essential Items</h6>
+                        <p>${plan.essentials}</p>
+                    </div>`;
+					}
+
+					if (plan.statement_pieces) {
+						html += `<div class="mb-3">
+                        <h6><i class="fas fa-gem me-2"></i>Statement Pieces</h6>
+                        <p>${plan.statement_pieces}</p>
+                    </div>`;
+					}
+
+					if (plan.accessories) {
+						html += `<div class="mb-3">
+                        <h6><i class="fas fa-crown me-2"></i>Accessories</h6>
+                        <p>${plan.accessories}</p>
+                    </div>`;
+					}
+
+					if (plan.outfit_combinations) {
+						html += `<div class="mb-3">
+                        <h6><i class="fas fa-magic me-2"></i>Outfit Combinations</h6>
+                        <p>${plan.outfit_combinations}</p>
+                    </div>`;
+					}
+				}
+
+				content.innerHTML = html;
+			}
+
+			function updateStyleTips() {
+				const tips = [
+					"Your color preferences work great together for a cohesive wardrobe!",
+					"Mix textures to add visual interest to your outfits.",
+					"Invest in quality basics that match your style preference.",
+					"Don't forget accessories - they can transform any outfit!",
+				];
+
+				const randomTip = tips[Math.floor(Math.random() * tips.length)];
+				document.getElementById(
+					"styleTips"
+				).innerHTML = `<div class="alert alert-success"><small><strong>Personal Tip:</strong> ${randomTip}</small></div>`;
+			}
+
+			function showSuccess(message) {
+				const alert = document.createElement("div");
+				alert.className =
+					"alert alert-success alert-dismissible fade show";
+				alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+				document
+					.querySelector(".container")
+					.insertAdjacentElement("afterbegin", alert);
+
+				setTimeout(() => {
+					alert.remove();
+				}, 5000);
+			}
+
+			function loadExistingPreferences() {
+				// Check if there are existing preferences in localStorage
+				const savedPrefs = localStorage.getItem(
+					"fashionCheckPreferences"
+				);
+				if (savedPrefs) {
+					try {
+						const prefs = JSON.parse(savedPrefs);
+						document.getElementById("username").value =
+							prefs.username || "";
+						document.getElementById("bodyType").value =
+							prefs.body_type || "";
+						document.getElementById("budgetRange").value =
+							prefs.budget_range || "";
+
+						// Restore selections
+						if (prefs.style_preference) {
+							const styleChip = document.querySelector(
+								`[data-style="${prefs.style_preference}"]`
+							);
+							if (styleChip) {
+								styleChip.click();
+							}
+						}
+
+						if (prefs.color_preferences) {
+							prefs.color_preferences.forEach((color) => {
+								const colorSwatch = document.querySelector(
+									`[data-color="${color}"]`
+								);
+								if (colorSwatch) {
+									colorSwatch.click();
+								}
+							});
+						}
+
+						if (prefs.occasion_types) {
+							prefs.occasion_types.forEach((occasion) => {
+								const occasionChip = document.querySelector(
+									`[data-occasion="${occasion}"]`
+								);
+								if (occasionChip) {
+									occasionChip.click();
+								}
+							});
+						}
+					} catch (e) {
+						console.error("Error loading saved preferences:", e);
+					}
+				}
+			}
+
+			// Save preferences to localStorage when form is submitted successfully
+			document.addEventListener("DOMContentLoaded", function () {
+				const originalSubmit =
+					document.getElementById("preferencesForm").onsubmit;
+				document
+					.getElementById("preferencesForm")
+					.addEventListener("submit", function () {
+						const prefs = {
+							username: document.getElementById("username").value,
+							style_preference: selectedStyle,
+							color_preferences: selectedColors,
+							body_type:
+								document.getElementById("bodyType").value,
+							occasion_types: selectedOccasions,
+							budget_range:
+								document.getElementById("budgetRange").value,
+						};
+						localStorage.setItem(
+							"fashionCheckPreferences",
+							JSON.stringify(prefs)
+						);
+					});
+			});
+		</script>
+	</body>
+</html>

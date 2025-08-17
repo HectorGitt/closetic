@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Fashion Analysis - Fashion Check</title>
+		<link
+			href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+			rel="stylesheet"
+		/>
+		<link
+			href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+			rel="stylesheet"
+		/>
+		<style>
+			.upload-area {
+				border: 2px dashed #007bff;
+				border-radius: 10px;
+				padding: 40px;
+				text-align: center;
+				background-color: #f8f9fa;
+				transition: all 0.3s ease;
+			}
+			.upload-area:hover {
+				background-color: #e9ecef;
+				border-color: #0056b3;
+			}
+			.upload-area.dragover {
+				background-color: #e7f3ff;
+				border-color: #0056b3;
+			}
+			.preview-image {
+				max-width: 100%;
+				max-height: 300px;
+				border-radius: 10px;
+				box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+			}
+			.analysis-card {
+				border: none;
+				box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+				border-radius: 10px;
+			}
+			.rating-badge {
+				font-size: 1.2em;
+				padding: 8px 12px;
+			}
+			.btn-fashion {
+				background: linear-gradient(45deg, #667eea, #764ba2);
+				border: none;
+				color: white;
+			}
+			.btn-fashion:hover {
+				background: linear-gradient(45deg, #764ba2, #667eea);
+				color: white;
+			}
+			.loading-spinner {
+				display: none;
+			}
+		</style>
+	</head>
+	<body>
+		<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+			<div class="container">
+				<a class="navbar-brand" href="/">
+					<i class="fas fa-tshirt me-2"></i>Fashion Check
+				</a>
+				<div class="navbar-nav ms-auto">
+					<a class="nav-link" href="/">Home</a>
+					<a class="nav-link" href="/fashion/camera">Live Camera</a>
+					<a class="nav-link" href="/users/profile">Profile</a>
+				</div>
+			</div>
+		</nav>
+
+		<div class="container my-5">
+			<div class="row">
+				<div class="col-md-8 mx-auto">
+					<h2 class="text-center mb-4">Fashion Analysis</h2>
+
+					<!-- Upload Section -->
+					<div class="card mb-4">
+						<div class="card-body">
+							<h5 class="card-title">Upload Your Outfit Photo</h5>
+							<form id="uploadForm" enctype="multipart/form-data">
+								<div class="upload-area mb-3" id="uploadArea">
+									<i
+										class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"
+									></i>
+									<h5>Drag & Drop your image here</h5>
+									<p class="text-muted">or click to browse</p>
+									<input
+										type="file"
+										id="fileInput"
+										name="file"
+										accept="image/*"
+										style="display: none"
+									/>
+								</div>
+
+								<div class="mb-3">
+									<label for="analysisType" class="form-label"
+										>Analysis Type</label
+									>
+									<select
+										class="form-select"
+										id="analysisType"
+										name="analysis_type"
+									>
+										<option value="comprehensive">
+											Comprehensive Analysis
+										</option>
+										<option value="color_match">
+											Color Coordination Focus
+										</option>
+										<option value="style_suggestions">
+											Style Suggestions Focus
+										</option>
+									</select>
+								</div>
+
+								<div
+									id="imagePreview"
+									class="mb-3 text-center"
+									style="display: none"
+								>
+									<img
+										id="previewImg"
+										class="preview-image"
+										alt="Preview"
+									/>
+								</div>
+
+								<button
+									type="submit"
+									class="btn btn-fashion w-100"
+								>
+									<span class="btn-text"
+										>Analyze Fashion</span
+									>
+									<span class="loading-spinner">
+										<i
+											class="fas fa-spinner fa-spin me-2"
+										></i
+										>Analyzing...
+									</span>
+								</button>
+							</form>
+						</div>
+					</div>
+
+					<!-- Results Section -->
+					<div id="resultsSection" style="display: none">
+						<div class="card analysis-card mb-4">
+							<div class="card-header bg-primary text-white">
+								<h5 class="mb-0">
+									<i class="fas fa-chart-line me-2"></i
+									>Analysis Results
+								</h5>
+							</div>
+							<div class="card-body">
+								<div id="analysisResults"></div>
+							</div>
+						</div>
+
+						<div class="card analysis-card mb-4">
+							<div class="card-header bg-success text-white">
+								<h5 class="mb-0">
+									<i class="fas fa-lightbulb me-2"></i
+									>Recommendations
+								</h5>
+							</div>
+							<div class="card-body">
+								<div id="recommendationsResults"></div>
+							</div>
+						</div>
+
+						<!-- Feedback Section -->
+						<div class="card analysis-card">
+							<div class="card-header bg-info text-white">
+								<h5 class="mb-0">
+									<i class="fas fa-star me-2"></i>Rate This
+									Analysis
+								</h5>
+							</div>
+							<div class="card-body">
+								<div class="text-center">
+									<p>How helpful was this analysis?</p>
+									<div class="btn-group" role="group">
+										<button
+											type="button"
+											class="btn btn-outline-warning rating-btn"
+											data-rating="1"
+										>
+											1 ⭐
+										</button>
+										<button
+											type="button"
+											class="btn btn-outline-warning rating-btn"
+											data-rating="2"
+										>
+											2 ⭐
+										</button>
+										<button
+											type="button"
+											class="btn btn-outline-warning rating-btn"
+											data-rating="3"
+										>
+											3 ⭐
+										</button>
+										<button
+											type="button"
+											class="btn btn-outline-warning rating-btn"
+											data-rating="4"
+										>
+											4 ⭐
+										</button>
+										<button
+											type="button"
+											class="btn btn-outline-warning rating-btn"
+											data-rating="5"
+										>
+											5 ⭐
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+		<script>
+			let currentAnalysisResult = null;
+
+			// File upload handling
+			const uploadArea = document.getElementById("uploadArea");
+			const fileInput = document.getElementById("fileInput");
+			const imagePreview = document.getElementById("imagePreview");
+			const previewImg = document.getElementById("previewImg");
+			const uploadForm = document.getElementById("uploadForm");
+
+			uploadArea.addEventListener("click", () => fileInput.click());
+			uploadArea.addEventListener("dragover", handleDragOver);
+			uploadArea.addEventListener("drop", handleDrop);
+			fileInput.addEventListener("change", handleFileSelect);
+			uploadForm.addEventListener("submit", handleFormSubmit);
+
+			function handleDragOver(e) {
+				e.preventDefault();
+				uploadArea.classList.add("dragover");
+			}
+
+			function handleDrop(e) {
+				e.preventDefault();
+				uploadArea.classList.remove("dragover");
+				const files = e.dataTransfer.files;
+				if (files.length > 0) {
+					fileInput.files = files;
+					displayImagePreview(files[0]);
+				}
+			}
+
+			function handleFileSelect(e) {
+				const file = e.target.files[0];
+				if (file) {
+					displayImagePreview(file);
+				}
+			}
+
+			function displayImagePreview(file) {
+				const reader = new FileReader();
+				reader.onload = function (e) {
+					previewImg.src = e.target.result;
+					imagePreview.style.display = "block";
+				};
+				reader.readAsDataURL(file);
+			}
+
+			async function handleFormSubmit(e) {
+				e.preventDefault();
+
+				const file = fileInput.files[0];
+				if (!file) {
+					alert("Please select an image file");
+					return;
+				}
+
+				// Show loading state
+				toggleLoadingState(true);
+
+				const formData = new FormData();
+				formData.append("file", file);
+				formData.append(
+					"analysis_type",
+					document.getElementById("analysisType").value
+				);
+
+				try {
+					const token = localStorage.getItem('access_token');
+					if (!token) {
+						window.location.href = '/auth/login?redirect=' + encodeURIComponent(window.location.pathname);
+						return;
+					}
+
+					const response = await fetch("/fashion/upload-analyze", {
+						method: "POST",
+						headers: {
+							'Authorization': `Bearer ${token}`
+						},
+						body: formData,
+					});
+
+					if (response.status === 401) {
+						// Token expired, redirect to login
+						localStorage.removeItem('access_token');
+						localStorage.removeItem('user_info');
+						window.location.href = '/auth/login?redirect=' + encodeURIComponent(window.location.pathname);
+						return;
+					}
+
+					const result = await response.json();
+
+					if (result.success) {
+						currentAnalysisResult = result;
+						displayResults(result);
+					} else {
+						throw new Error(result.detail || "Analysis failed");
+					}
+				} catch (error) {
+					alert("Error: " + error.message);
+					console.error("Analysis error:", error);
+				} finally {
+					toggleLoadingState(false);
+				}
+			}
+
+			function toggleLoadingState(loading) {
+				const btnText = document.querySelector(".btn-text");
+				const loadingSpinner =
+					document.querySelector(".loading-spinner");
+				const submitBtn = uploadForm.querySelector(
+					'button[type="submit"]'
+				);
+
+				if (loading) {
+					btnText.style.display = "none";
+					loadingSpinner.style.display = "inline";
+					submitBtn.disabled = true;
+				} else {
+					btnText.style.display = "inline";
+					loadingSpinner.style.display = "none";
+					submitBtn.disabled = false;
+				}
+			}
+
+			function displayResults(result) {
+				const resultsSection =
+					document.getElementById("resultsSection");
+				const analysisResults =
+					document.getElementById("analysisResults");
+				const recommendationsResults = document.getElementById(
+					"recommendationsResults"
+				);
+
+				// Display analysis results
+				analysisResults.innerHTML = formatAnalysisResults(
+					result.analysis
+				);
+
+				// Display recommendations
+				if (result.recommendations) {
+					recommendationsResults.innerHTML = formatRecommendations(
+						result.recommendations
+					);
+				}
+
+				resultsSection.style.display = "block";
+				resultsSection.scrollIntoView({ behavior: "smooth" });
+			}
+
+			function formatAnalysisResults(analysis) {
+				if (analysis.raw_analysis) {
+					return `<div class="alert alert-info">${analysis.raw_analysis.replace(
+						/\n/g,
+						"<br>"
+					)}</div>`;
+				}
+
+				let html = "";
+
+				if (analysis.overall_rating) {
+					const rating = analysis.overall_rating;
+					const badgeClass =
+						rating >= 8
+							? "bg-success"
+							: rating >= 6
+							? "bg-warning"
+							: "bg-danger";
+					html += `<div class="mb-3">
+                    <span class="badge ${badgeClass} rating-badge">Overall Rating: ${rating}/10</span>
+                </div>`;
+				}
+
+				if (analysis.color_analysis) {
+					html += `<div class="mb-3">
+                    <h6><i class="fas fa-palette me-2"></i>Color Analysis</h6>
+                    <p>${analysis.color_analysis}</p>
+                </div>`;
+				}
+
+				if (analysis.fit_analysis) {
+					html += `<div class="mb-3">
+                    <h6><i class="fas fa-ruler me-2"></i>Fit Analysis</h6>
+                    <p>${analysis.fit_analysis}</p>
+                </div>`;
+				}
+
+				if (analysis.texture_analysis) {
+					html += `<div class="mb-3">
+                    <h6><i class="fas fa-hand-paper me-2"></i>Texture Analysis</h6>
+                    <p>${analysis.texture_analysis}</p>
+                </div>`;
+				}
+
+				return html || "<p>Analysis completed successfully!</p>";
+			}
+
+			function formatRecommendations(recommendations) {
+				if (recommendations.raw_recommendations) {
+					return `<div class="alert alert-success">${recommendations.raw_recommendations.replace(
+						/\n/g,
+						"<br>"
+					)}</div>`;
+				}
+
+				let html = "";
+
+				if (recommendations.immediate_improvements) {
+					html += `<div class="mb-3">
+                    <h6><i class="fas fa-arrow-up me-2"></i>Immediate Improvements</h6>
+                    <p>${recommendations.immediate_improvements}</p>
+                </div>`;
+				}
+
+				if (recommendations.shopping_list) {
+					html += `<div class="mb-3">
+                    <h6><i class="fas fa-shopping-bag me-2"></i>Shopping Suggestions</h6>
+                    <p>${recommendations.shopping_list}</p>
+                </div>`;
+				}
+
+				if (recommendations.styling_alternatives) {
+					html += `<div class="mb-3">
+                    <h6><i class="fas fa-magic me-2"></i>Styling Alternatives</h6>
+                    <p>${recommendations.styling_alternatives}</p>
+                </div>`;
+				}
+
+				if (recommendations.accessories) {
+					html += `<div class="mb-3">
+                    <h6><i class="fas fa-gem me-2"></i>Accessory Recommendations</h6>
+                    <p>${recommendations.accessories}</p>
+                </div>`;
+				}
+
+				return html || "<p>No specific recommendations available.</p>";
+			}
+
+			// Rating functionality
+			document.querySelectorAll(".rating-btn").forEach((btn) => {
+				btn.addEventListener("click", async function () {
+					const rating = parseInt(this.dataset.rating);
+
+					if (currentAnalysisResult) {
+						try {
+							await fetch("/admin/feedback", {
+								method: "POST",
+								headers: {
+									"Content-Type": "application/json",
+								},
+								body: JSON.stringify({
+									analysis_result:
+										currentAnalysisResult.analysis,
+									user_rating: rating,
+								}),
+							});
+
+							// Visual feedback
+							document
+								.querySelectorAll(".rating-btn")
+								.forEach((b) => {
+									b.classList.remove("btn-warning");
+									b.classList.add("btn-outline-warning");
+								});
+							this.classList.remove("btn-outline-warning");
+							this.classList.add("btn-warning");
+
+							// Show thank you message
+							setTimeout(() => {
+								alert("Thank you for your feedback!");
+							}, 500);
+						} catch (error) {
+							console.error("Error submitting feedback:", error);
+						}
+					}
+				});
+			});
+		</script>
+	</body>
+</html>

@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Admin Dashboard - Fashion Check</title>
+		<link
+			href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+			rel="stylesheet"
+		/>
+		<link
+			href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+			rel="stylesheet"
+		/>
+		<link
+			href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css"
+			rel="stylesheet"
+		/>
+		<style>
+			.stats-card {
+				border: none;
+				box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+				border-radius: 10px;
+				transition: transform 0.3s ease;
+			}
+			.stats-card:hover {
+				transform: translateY(-2px);
+			}
+			.stats-icon {
+				width: 60px;
+				height: 60px;
+				border-radius: 50%;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				font-size: 24px;
+				color: white;
+			}
+			.chart-container {
+				position: relative;
+				height: 300px;
+			}
+		</style>
+	</head>
+	<body>
+		<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+			<div class="container">
+				<a class="navbar-brand" href="/">
+					<i class="fas fa-tshirt me-2"></i>Fashion Check Admin
+				</a>
+				<div class="navbar-nav ms-auto">
+					<a class="nav-link" href="/">Public Site</a>
+					<a class="nav-link" href="/admin/analytics">Analytics</a>
+				</div>
+			</div>
+		</nav>
+
+		<div class="container my-5">
+			<div class="row">
+				<div class="col-md-12">
+					<h2 class="mb-4">
+						<i class="fas fa-chart-dashboard me-2"></i>Fashion Check
+						Analytics Dashboard
+					</h2>
+				</div>
+			</div>
+
+			<!-- Stats Cards -->
+			<div class="row mb-5">
+				<div class="col-md-3 mb-4">
+					<div class="card stats-card">
+						<div class="card-body d-flex align-items-center">
+							<div class="stats-icon bg-primary me-3">
+								<i class="fas fa-camera"></i>
+							</div>
+							<div>
+								<h5 class="card-title mb-0" id="totalAnalyses">
+									0
+								</h5>
+								<p class="card-text text-muted">
+									Total Analyses
+								</p>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-3 mb-4">
+					<div class="card stats-card">
+						<div class="card-body d-flex align-items-center">
+							<div class="stats-icon bg-success me-3">
+								<i class="fas fa-star"></i>
+							</div>
+							<div>
+								<h5
+									class="card-title mb-0"
+									id="avgSatisfaction"
+								>
+									0.0
+								</h5>
+								<p class="card-text text-muted">
+									Avg Satisfaction
+								</p>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-3 mb-4">
+					<div class="card stats-card">
+						<div class="card-body d-flex align-items-center">
+							<div class="stats-icon bg-warning me-3">
+								<i class="fas fa-palette"></i>
+							</div>
+							<div>
+								<h5 class="card-title mb-0" id="topStyle">-</h5>
+								<p class="card-text text-muted">Top Style</p>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-3 mb-4">
+					<div class="card stats-card">
+						<div class="card-body d-flex align-items-center">
+							<div class="stats-icon bg-info me-3">
+								<i class="fas fa-exclamation-triangle"></i>
+							</div>
+							<div>
+								<h5 class="card-title mb-0" id="topIssue">-</h5>
+								<p class="card-text text-muted">Common Issue</p>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Charts Section -->
+			<div class="row mb-5">
+				<div class="col-md-6">
+					<div class="card">
+						<div class="card-header">
+							<h5 class="mb-0">
+								<i class="fas fa-chart-pie me-2"></i>Popular
+								Styles
+							</h5>
+						</div>
+						<div class="card-body">
+							<div class="chart-container">
+								<canvas id="stylesChart"></canvas>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-6">
+					<div class="card">
+						<div class="card-header">
+							<h5 class="mb-0">
+								<i class="fas fa-chart-bar me-2"></i>Common
+								Issues
+							</h5>
+						</div>
+						<div class="card-body">
+							<div class="chart-container">
+								<canvas id="issuesChart"></canvas>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Current Trends -->
+			<div class="row mb-5">
+				<div class="col-md-12">
+					<div class="card">
+						<div
+							class="card-header d-flex justify-content-between align-items-center"
+						>
+							<h5 class="mb-0">
+								<i class="fas fa-fire me-2"></i>Current Fashion
+								Trends
+							</h5>
+							<button
+								class="btn btn-primary btn-sm"
+								id="refreshTrends"
+							>
+								<i class="fas fa-sync-alt me-1"></i>Refresh
+							</button>
+						</div>
+						<div class="card-body">
+							<div id="trendsContent">
+								<div class="text-center">
+									<i
+										class="fas fa-spinner fa-spin fa-2x mb-2"
+									></i>
+									<p>Loading current trends...</p>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- User Insights -->
+			<div class="row mb-5">
+				<div class="col-md-12">
+					<div class="card">
+						<div class="card-header">
+							<h5 class="mb-0">
+								<i class="fas fa-users me-2"></i>User Insights
+							</h5>
+						</div>
+						<div class="card-body">
+							<div id="userInsights">
+								<div class="text-center">
+									<i
+										class="fas fa-spinner fa-spin fa-2x mb-2"
+									></i>
+									<p>Loading user insights...</p>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Style Database -->
+			<div class="row">
+				<div class="col-md-12">
+					<div class="card">
+						<div class="card-header">
+							<h5 class="mb-0">
+								<i class="fas fa-database me-2"></i>Style
+								Database
+							</h5>
+						</div>
+						<div class="card-body">
+							<div class="accordion" id="styleAccordion">
+								<div class="accordion-item">
+									<h2
+										class="accordion-header"
+										id="headingStyles"
+									>
+										<button
+											class="accordion-button collapsed"
+											type="button"
+											data-bs-toggle="collapse"
+											data-bs-target="#collapseStyles"
+										>
+											Style Categories
+										</button>
+									</h2>
+									<div
+										id="collapseStyles"
+										class="accordion-collapse collapse"
+										data-bs-parent="#styleAccordion"
+									>
+										<div
+											class="accordion-body"
+											id="styleCategories"
+										>
+											Loading...
+										</div>
+									</div>
+								</div>
+								<div class="accordion-item">
+									<h2
+										class="accordion-header"
+										id="headingColors"
+									>
+										<button
+											class="accordion-button collapsed"
+											type="button"
+											data-bs-toggle="collapse"
+											data-bs-target="#collapseColors"
+										>
+											Color Theory
+										</button>
+									</h2>
+									<div
+										id="collapseColors"
+										class="accordion-collapse collapse"
+										data-bs-parent="#styleAccordion"
+									>
+										<div
+											class="accordion-body"
+											id="colorTheory"
+										>
+											Loading...
+										</div>
+									</div>
+								</div>
+								<div class="accordion-item">
+									<h2
+										class="accordion-header"
+										id="headingBody"
+									>
+										<button
+											class="accordion-button collapsed"
+											type="button"
+											data-bs-toggle="collapse"
+											data-bs-target="#collapseBody"
+										>
+											Body Types
+										</button>
+									</h2>
+									<div
+										id="collapseBody"
+										class="accordion-collapse collapse"
+										data-bs-parent="#styleAccordion"
+									>
+										<div
+											class="accordion-body"
+											id="bodyTypes"
+										>
+											Loading...
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+		<script>
+			let stylesChart, issuesChart;
+
+			document.addEventListener("DOMContentLoaded", function () {
+				loadAnalytics();
+				loadTrends();
+				loadUserInsights();
+				loadStyleDatabase();
+
+				document
+					.getElementById("refreshTrends")
+					.addEventListener("click", loadTrends);
+			});
+
+			async function loadAnalytics() {
+				try {
+					const response = await fetch("/admin/analytics");
+					const data = await response.json();
+
+					// Update stats cards
+					document.getElementById("totalAnalyses").textContent =
+						data.total_analyses;
+					document.getElementById("avgSatisfaction").textContent =
+						data.user_satisfaction;
+					document.getElementById("topStyle").textContent =
+						data.popular_styles[0] || "None";
+					document.getElementById("topIssue").textContent =
+						data.common_issues[0] || "None";
+
+					// Create charts
+					createStylesChart(data.popular_styles);
+					createIssuesChart(data.common_issues);
+				} catch (error) {
+					console.error("Error loading analytics:", error);
+				}
+			}
+
+			function createStylesChart(styles) {
+				const ctx = document
+					.getElementById("stylesChart")
+					.getContext("2d");
+
+				if (stylesChart) {
+					stylesChart.destroy();
+				}
+
+				stylesChart = new Chart(ctx, {
+					type: "doughnut",
+					data: {
+						labels: styles.length ? styles : ["No data"],
+						datasets: [
+							{
+								data: styles.length ? styles.map(() => 1) : [1],
+								backgroundColor: [
+									"#FF6384",
+									"#36A2EB",
+									"#FFCE56",
+									"#4BC0C0",
+									"#9966FF",
+									"#FF9F40",
+									"#FF6384",
+									"#C9CBCF",
+								],
+							},
+						],
+					},
+					options: {
+						responsive: true,
+						maintainAspectRatio: false,
+						plugins: {
+							legend: {
+								position: "bottom",
+							},
+						},
+					},
+				});
+			}
+
+			function createIssuesChart(issues) {
+				const ctx = document
+					.getElementById("issuesChart")
+					.getContext("2d");
+
+				if (issuesChart) {
+					issuesChart.destroy();
+				}
+
+				issuesChart = new Chart(ctx, {
+					type: "bar",
+					data: {
+						labels: issues.length ? issues : ["No data"],
+						datasets: [
+							{
+								label: "Frequency",
+								data: issues.length
+									? issues.map(() => Math.random() * 10)
+									: [1],
+								backgroundColor: "#36A2EB",
+								borderColor: "#36A2EB",
+								borderWidth: 1,
+							},
+						],
+					},
+					options: {
+						responsive: true,
+						maintainAspectRatio: false,
+						scales: {
+							y: {
+								beginAtZero: true,
+							},
+						},
+					},
+				});
+			}
+
+			async function loadTrends() {
+				const trendsContent = document.getElementById("trendsContent");
+				trendsContent.innerHTML =
+					'<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading trends...</div>';
+
+				try {
+					const response = await fetch("/admin/trends");
+					const trends = await response.json();
+
+					let html = "";
+
+					if (trends.raw_trends) {
+						html = `<div class="alert alert-info">${trends.raw_trends.replace(
+							/\n/g,
+							"<br>"
+						)}</div>`;
+					} else {
+						if (trends.trending_styles) {
+							html += `<div class="mb-3">
+                            <h6><i class="fas fa-fire me-2"></i>Trending Styles</h6>
+                            <p>${trends.trending_styles}</p>
+                        </div>`;
+						}
+
+						if (trends.popular_colors) {
+							html += `<div class="mb-3">
+                            <h6><i class="fas fa-palette me-2"></i>Popular Colors</h6>
+                            <p>${trends.popular_colors}</p>
+                        </div>`;
+						}
+
+						if (trends.sustainability_trends) {
+							html += `<div class="mb-3">
+                            <h6><i class="fas fa-leaf me-2"></i>Sustainability Trends</h6>
+                            <p>${trends.sustainability_trends}</p>
+                        </div>`;
+						}
+					}
+
+					trendsContent.innerHTML =
+						html || "<p>No trends data available</p>";
+				} catch (error) {
+					console.error("Error loading trends:", error);
+					trendsContent.innerHTML =
+						'<div class="alert alert-danger">Error loading trends</div>';
+				}
+			}
+
+			async function loadUserInsights() {
+				try {
+					const response = await fetch("/admin/user-insights");
+					const insights = await response.json();
+
+					let html = '<div class="row">';
+
+					html += `<div class="col-md-4">
+                    <h6>Most Analyzed Styles</h6>
+                    <ul class="list-group list-group-flush">`;
+
+					insights.most_analyzed_styles.forEach((style) => {
+						html += `<li class="list-group-item">${style}</li>`;
+					});
+
+					html += `</ul></div>`;
+
+					html += `<div class="col-md-4">
+                    <h6>Common Issues</h6>
+                    <ul class="list-group list-group-flush">`;
+
+					insights.common_fashion_issues.forEach((issue) => {
+						html += `<li class="list-group-item">${issue}</li>`;
+					});
+
+					html += `</ul></div>`;
+
+					html += `<div class="col-md-4">
+                    <h6>Improvement Areas</h6>
+                    <ul class="list-group list-group-flush">`;
+
+					insights.improvement_areas.forEach((area) => {
+						html += `<li class="list-group-item">${area}</li>`;
+					});
+
+					html += `</ul></div></div>`;
+
+					document.getElementById("userInsights").innerHTML = html;
+				} catch (error) {
+					console.error("Error loading user insights:", error);
+					document.getElementById("userInsights").innerHTML =
+						'<div class="alert alert-danger">Error loading insights</div>';
+				}
+			}
+
+			async function loadStyleDatabase() {
+				try {
+					const response = await fetch("/admin/style-database");
+					const database = await response.json();
+
+					// Style Categories
+					let styleHtml = "";
+					Object.entries(database.style_categories).forEach(
+						([style, info]) => {
+							styleHtml += `<div class="mb-3">
+                        <h6 class="text-capitalize">${style}</h6>
+                        <p><strong>Description:</strong> ${info.description}</p>
+                        <p><strong>Key Pieces:</strong> ${info.key_pieces.join(
+							", "
+						)}</p>
+                        <p><strong>Occasions:</strong> ${info.occasions.join(
+							", "
+						)}</p>
+                    </div><hr>`;
+						}
+					);
+					document.getElementById("styleCategories").innerHTML =
+						styleHtml;
+
+					// Color Theory
+					let colorHtml = `
+                    <div class="mb-3">
+                        <h6>Complementary Colors</h6>
+                        <p>${database.color_theory.complementary.join(", ")}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Seasonal Palettes</h6>`;
+
+					Object.entries(
+						database.color_theory.seasonal_palettes
+					).forEach(([season, colors]) => {
+						colorHtml += `<p><strong class="text-capitalize">${season}:</strong> ${colors.join(
+							", "
+						)}</p>`;
+					});
+
+					colorHtml += "</div>";
+					document.getElementById("colorTheory").innerHTML =
+						colorHtml;
+
+					// Body Types
+					let bodyHtml = "";
+					Object.entries(database.body_types).forEach(
+						([type, info]) => {
+							bodyHtml += `<div class="mb-3">
+                        <h6 class="text-capitalize">${type}</h6>
+                        <p><strong>Characteristics:</strong> ${
+							info.characteristics
+						}</p>
+                        <p><strong>Flattering:</strong> ${info.flattering.join(
+							", "
+						)}</p>
+                        <p><strong>Avoid:</strong> ${info.avoid.join(", ")}</p>
+                    </div><hr>`;
+						}
+					);
+					document.getElementById("bodyTypes").innerHTML = bodyHtml;
+				} catch (error) {
+					console.error("Error loading style database:", error);
+				}
+			}
+		</script>
+	</body>
+</html>

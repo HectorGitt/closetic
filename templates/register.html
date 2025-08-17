@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Register - Fashion Check</title>
+		<link
+			href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+			rel="stylesheet"
+		/>
+		<link
+			href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+			rel="stylesheet"
+		/>
+		<style>
+			body {
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				min-height: 100vh;
+				display: flex;
+				align-items: center;
+			}
+			.register-card {
+				backdrop-filter: blur(10px);
+				background: rgba(255, 255, 255, 0.95);
+				border: none;
+				box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+			}
+			.brand-logo {
+				font-size: 2rem;
+				font-weight: bold;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				-webkit-background-clip: text;
+				-webkit-text-fill-color: transparent;
+				background-clip: text;
+			}
+			.btn-gradient {
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				border: none;
+				transition: transform 0.2s;
+			}
+			.btn-gradient:hover {
+				transform: translateY(-2px);
+				background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+			}
+			.form-control:focus {
+				border-color: #667eea;
+				box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+			}
+			.password-strength {
+				height: 4px;
+				transition: all 0.3s;
+			}
+			.strength-weak {
+				background-color: #dc3545;
+			}
+			.strength-medium {
+				background-color: #ffc107;
+			}
+			.strength-strong {
+				background-color: #28a745;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<div class="row justify-content-center">
+				<div class="col-md-5">
+					<div class="card register-card">
+						<div class="card-body p-5">
+							<div class="text-center mb-4">
+								<i class="fas fa-tshirt brand-logo"></i>
+								<h2 class="brand-logo mt-2">Fashion Check</h2>
+								<p class="text-muted">Create your account</p>
+							</div>
+
+							<form id="registerForm">
+								<div class="mb-3">
+									<label class="form-label">
+										<i class="fas fa-user me-2"></i>Username
+									</label>
+									<input
+										type="text"
+										class="form-control"
+										name="username"
+										required
+										minlength="3"
+										maxlength="50"
+									/>
+									<div class="form-text">
+										3-50 characters, letters and numbers
+										only
+									</div>
+								</div>
+
+								<div class="mb-3">
+									<label class="form-label">
+										<i class="fas fa-envelope me-2"></i
+										>Email
+									</label>
+									<input
+										type="email"
+										class="form-control"
+										name="email"
+										required
+									/>
+								</div>
+
+								<div class="mb-3">
+									<label class="form-label">
+										<i class="fas fa-lock me-2"></i>Password
+									</label>
+									<input
+										type="password"
+										class="form-control"
+										name="password"
+										required
+										minlength="8"
+										id="password"
+									/>
+									<div
+										class="password-strength mt-1 rounded"
+										id="strengthBar"
+									></div>
+									<div class="form-text">
+										At least 8 characters with letters and
+										numbers
+									</div>
+								</div>
+
+								<div class="mb-3">
+									<label class="form-label">
+										<i class="fas fa-lock me-2"></i>Confirm
+										Password
+									</label>
+									<input
+										type="password"
+										class="form-control"
+										name="confirm_password"
+										required
+										id="confirmPassword"
+									/>
+								</div>
+
+								<div class="mb-3 form-check">
+									<input
+										type="checkbox"
+										class="form-check-input"
+										id="terms"
+										required
+									/>
+									<label class="form-check-label" for="terms">
+										I agree to the
+										<a href="#" class="text-decoration-none"
+											>Terms of Service</a
+										>
+										and
+										<a href="#" class="text-decoration-none"
+											>Privacy Policy</a
+										>
+									</label>
+								</div>
+
+								<div class="d-grid gap-2">
+									<button
+										type="submit"
+										class="btn btn-gradient text-white btn-lg"
+									>
+										<i class="fas fa-user-plus me-2"></i
+										>Create Account
+									</button>
+								</div>
+							</form>
+
+							<div id="message" class="mt-3"></div>
+
+							<div class="text-center mt-4">
+								<p class="text-muted">
+									Already have an account?
+								</p>
+								<a
+									href="auth/login"
+									class="btn btn-outline-primary"
+								>
+									<i class="fas fa-sign-in-alt me-2"></i>Sign
+									In
+								</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+		<script>
+			// Password strength checker
+			document
+				.getElementById("password")
+				.addEventListener("input", function () {
+					const password = this.value;
+					const strengthBar = document.getElementById("strengthBar");
+
+					let strength = 0;
+					if (password.length >= 8) strength++;
+					if (/[A-Z]/.test(password)) strength++;
+					if (/[a-z]/.test(password)) strength++;
+					if (/[0-9]/.test(password)) strength++;
+					if (/[^A-Za-z0-9]/.test(password)) strength++;
+
+					strengthBar.className = "password-strength mt-1 rounded";
+					if (strength < 2) {
+						strengthBar.classList.add("strength-weak");
+					} else if (strength < 4) {
+						strengthBar.classList.add("strength-medium");
+					} else {
+						strengthBar.classList.add("strength-strong");
+					}
+				});
+
+			// Password confirmation checker
+			document
+				.getElementById("confirmPassword")
+				.addEventListener("input", function () {
+					const password = document.getElementById("password").value;
+					const confirmPassword = this.value;
+
+					if (password !== confirmPassword) {
+						this.setCustomValidity("Passwords do not match");
+					} else {
+						this.setCustomValidity("");
+					}
+				});
+
+			document
+				.getElementById("registerForm")
+				.addEventListener("submit", async (e) => {
+					e.preventDefault();
+
+					const formData = new FormData(e.target);
+					const userData = {
+						username: formData.get("username"),
+						email: formData.get("email"),
+						password: formData.get("password"),
+					};
+
+					// Check password confirmation
+					if (
+						userData.password !== formData.get("confirm_password")
+					) {
+						document.getElementById("message").innerHTML =
+							'<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>Passwords do not match</div>';
+						return;
+					}
+
+					const messageDiv = document.getElementById("message");
+					const submitBtn = e.target.querySelector(
+						'button[type="submit"]'
+					);
+
+					// Show loading state
+					submitBtn.disabled = true;
+					submitBtn.innerHTML =
+						'<i class="fas fa-spinner fa-spin me-2"></i>Creating Account...';
+
+					try {
+						const response = await fetch("/auth/register", {
+							method: "POST",
+							headers: {
+								"Content-Type": "application/json",
+							},
+							body: JSON.stringify(userData),
+						});
+
+						const data = await response.json();
+
+						if (response.ok) {
+							messageDiv.innerHTML =
+								'<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i>Account created successfully! Redirecting to login...</div>';
+
+							setTimeout(() => {
+								window.location.href = "login";
+							}, 2000);
+						} else {
+							messageDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-circle me-2"></i>${data.detail}</div>`;
+						}
+					} catch (error) {
+						messageDiv.innerHTML =
+							'<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>Registration failed. Please try again.</div>';
+					} finally {
+						// Reset button
+						submitBtn.disabled = false;
+						submitBtn.innerHTML =
+							'<i class="fas fa-user-plus me-2"></i>Create Account';
+					}
+				});
+
+			// Check if already logged in
+			fetch("/auth/check")
+				.then((response) => response.json())
+				.then((data) => {
+					if (data.authenticated) {
+						window.location.href = "/";
+					}
+				});
+		</script>
+	</body>
+</html>

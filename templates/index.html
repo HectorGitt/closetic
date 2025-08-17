@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Fashion Check - AI-Powered Style Analysis</title>
+		<link
+			href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+			rel="stylesheet"
+		/>
+		<link
+			href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+			rel="stylesheet"
+		/>
+		<style>
+			.hero-section {
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				color: white;
+				padding: 100px 0;
+			}
+			.feature-card {
+				transition: transform 0.3s;
+				border: none;
+				box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+			}
+			.feature-card:hover {
+				transform: translateY(-5px);
+			}
+			.btn-fashion {
+				background: linear-gradient(45deg, #667eea, #764ba2);
+				border: none;
+				color: white;
+			}
+			.btn-fashion:hover {
+				background: linear-gradient(45deg, #764ba2, #667eea);
+				color: white;
+			}
+		</style>
+	</head>
+	<body>
+		<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+			<div class="container">
+				<a class="navbar-brand" href="/">
+					<i class="fas fa-tshirt me-2"></i>Fashion Check
+				</a>
+				<button
+					class="navbar-toggler"
+					type="button"
+					data-bs-toggle="collapse"
+					data-bs-target="#navbarNav"
+				>
+					<span class="navbar-toggler-icon"></span>
+				</button>
+				<div class="collapse navbar-collapse" id="navbarNav">
+					<ul class="navbar-nav me-auto">
+						<li class="nav-item">
+							<a class="nav-link" href="/fashion/analyze"
+								>Upload Analysis</a
+							>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" href="/fashion/camera"
+								>Live Camera</a
+							>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" href="/users/profile"
+								>Profile</a
+							>
+						</li>
+					</ul>
+					<ul class="navbar-nav ms-auto" id="navAuth">
+						<!-- Authentication links will be populated by JavaScript -->
+					</ul>
+				</div>
+			</div>
+		</nav>
+
+		<div class="hero-section text-center">
+			<div class="container">
+				<h1 class="display-4 mb-4">Fashion Check</h1>
+				<p class="lead mb-4">
+					AI-Powered Fashion Analysis & Style Recommendations
+				</p>
+				<p class="mb-5">
+					Upload your outfit photos or use live camera to get instant
+					fashion advice, color coordination analysis, and
+					personalized styling suggestions.
+				</p>
+				<div class="row justify-content-center">
+					<div class="col-md-6">
+						<a
+							href="/fashion/analyze"
+							class="btn btn-fashion btn-lg me-3"
+						>
+							<i class="fas fa-upload me-2"></i>Upload Photo
+						</a>
+						<a
+							href="/fashion/camera"
+							class="btn btn-outline-light btn-lg"
+						>
+							<i class="fas fa-camera me-2"></i>Live Camera
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="container my-5">
+			<div class="row text-center mb-5">
+				<div class="col-md-12">
+					<h2>How It Works</h2>
+					<p class="text-muted">
+						Get professional fashion advice in three simple steps
+					</p>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="col-md-4 mb-4">
+					<div class="card feature-card h-100">
+						<div class="card-body text-center">
+							<i
+								class="fas fa-camera fa-3x text-primary mb-3"
+							></i>
+							<h5 class="card-title">1. Capture or Upload</h5>
+							<p class="card-text">
+								Take a photo with your camera or upload an
+								existing image of your outfit.
+							</p>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-4 mb-4">
+					<div class="card feature-card h-100">
+						<div class="card-body text-center">
+							<i class="fas fa-brain fa-3x text-success mb-3"></i>
+							<h5 class="card-title">2. AI Analysis</h5>
+							<p class="card-text">
+								Our AI analyzes colors, textures, fit, and
+								overall style coordination.
+							</p>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-4 mb-4">
+					<div class="card feature-card h-100">
+						<div class="card-body text-center">
+							<i
+								class="fas fa-lightbulb fa-3x text-warning mb-3"
+							></i>
+							<h5 class="card-title">3. Get Recommendations</h5>
+							<p class="card-text">
+								Receive personalized styling tips and
+								improvement suggestions.
+							</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="bg-light py-5">
+			<div class="container">
+				<div class="row">
+					<div class="col-md-12 text-center mb-5">
+						<h2>Features</h2>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-md-6 mb-4">
+						<div class="d-flex">
+							<i
+								class="fas fa-palette fa-2x text-primary me-3 mt-1"
+							></i>
+							<div>
+								<h5>Color Coordination Analysis</h5>
+								<p>
+									Get detailed feedback on color harmony,
+									seasonal appropriateness, and suggestions
+									for better combinations.
+								</p>
+							</div>
+						</div>
+					</div>
+					<div class="col-md-6 mb-4">
+						<div class="d-flex">
+							<i
+								class="fas fa-cut fa-2x text-success me-3 mt-1"
+							></i>
+							<div>
+								<h5>Fit & Silhouette Analysis</h5>
+								<p>
+									Understand how well your clothes fit and get
+									suggestions for better silhouettes.
+								</p>
+							</div>
+						</div>
+					</div>
+					<div class="col-md-6 mb-4">
+						<div class="d-flex">
+							<i
+								class="fas fa-gem fa-2x text-warning me-3 mt-1"
+							></i>
+							<div>
+								<h5>Texture & Material Insights</h5>
+								<p>
+									Learn about fabric combinations and texture
+									mixing for more interesting outfits.
+								</p>
+							</div>
+						</div>
+					</div>
+					<div class="col-md-6 mb-4">
+						<div class="d-flex">
+							<i
+								class="fas fa-user-circle fa-2x text-info me-3 mt-1"
+							></i>
+							<div>
+								<h5>Personalized Recommendations</h5>
+								<p>
+									Set your style preferences and get tailored
+									advice that matches your personal taste.
+								</p>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="container my-5">
+			<div class="row justify-content-center">
+				<div class="col-md-8 text-center">
+					<h3>Ready to Upgrade Your Style?</h3>
+					<p class="mb-4">
+						Join thousands of users who have improved their fashion
+						sense with AI-powered analysis.
+					</p>
+					<a href="/fashion/analyze" class="btn btn-fashion btn-lg"
+						>Get Started Now</a
+					>
+				</div>
+			</div>
+		</div>
+
+		<footer class="bg-dark text-light py-4">
+			<div class="container text-center">
+				<p>
+					&copy; 2025 Fashion Check. Powered by AI for better style.
+				</p>
+			</div>
+		</footer>
+
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+		<script>
+			// Check authentication status and update navigation
+			function updateAuthNavigation() {
+				const token = localStorage.getItem("access_token");
+				const userInfo = JSON.parse(
+					localStorage.getItem("user_info") || "{}"
+				);
+				const navAuth = document.getElementById("navAuth");
+
+				if (token && userInfo.username) {
+					// User is authenticated
+					navAuth.innerHTML = `
+						<li class="nav-item dropdown">
+							<a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+								<i class="fas fa-user me-1"></i>${userInfo.username}
+							</a>
+							<ul class="dropdown-menu">
+								<li><a class="dropdown-item" href="/auth/dashboard-page">
+									<i class="fas fa-chart-pie me-2"></i>Dashboard
+								</a></li>
+								<li><a class="dropdown-item" href="/users/profile">
+									<i class="fas fa-user-cog me-2"></i>Profile
+								</a></li>
+								<li><hr class="dropdown-divider"></li>
+								<li><a class="dropdown-item" href="#" onclick="logout()">
+									<i class="fas fa-sign-out-alt me-2"></i>Logout
+								</a></li>
+							</ul>
+						</li>
+					`;
+				} else {
+					// User is not authenticated
+					navAuth.innerHTML = `
+						<li class="nav-item">
+							<a class="nav-link" href="/auth/login">
+								<i class="fas fa-sign-in-alt me-1"></i>Login
+							</a>
+						</li>
+						<li class="nav-item">
+							<a class="nav-link" href="/auth/register">
+								<i class="fas fa-user-plus me-1"></i>Register
+							</a>
+						</li>
+					`;
+				}
+			}
+
+			// Logout function
+			async function logout() {
+				try {
+					const token = localStorage.getItem("access_token");
+					if (token) {
+						await fetch("/auth/logout", {
+							method: "POST",
+							headers: {
+								Authorization: `Bearer ${token}`,
+								"Content-Type": "application/json",
+							},
+						});
+					}
+				} catch (error) {
+					console.error("Logout error:", error);
+				}
+
+				// Clear local storage
+				localStorage.removeItem("access_token");
+				localStorage.removeItem("user_info");
+
+				// Update navigation and redirect
+				updateAuthNavigation();
+				window.location.href = "/";
+			}
+
+			// Update navigation on page load
+			document.addEventListener("DOMContentLoaded", updateAuthNavigation);
+		</script>
+	</body>
+</html>
