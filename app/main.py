@@ -19,15 +19,7 @@ app = FastAPI(
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:8080",  # Next.js default port
-        "http://localhost:3001",  # Alternative frontend port
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:3001",
-        "http://localhost:8000",  # Allow same origin
-        "https://preview--outfit-analyzer-pro.lovable.app",
-        "https://tn25sdnv-8080.uks1.devtunnels.ms",
-    ],
+    allow_origins=[os.getenv("CORS_ORIGINS", "").split(",")],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=[
