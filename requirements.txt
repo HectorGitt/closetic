@@ -13,3 +13,4 @@ requests
 sqlalchemy
 psutil
 psycopg2
+alembic
