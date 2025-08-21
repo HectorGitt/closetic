@@ -14,3 +14,4 @@ sqlalchemy
 psutil
 psycopg2
 alembic
+pydantic[email]
