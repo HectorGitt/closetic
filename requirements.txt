@@ -8,7 +8,7 @@ openai
 pillow
 opencv-python
 numpy
-aiofiless
+aiofiles
 requests
 sqlalchemy
 psutil
