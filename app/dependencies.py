@@ -1,7 +1,7 @@
+import os
 from fastapi import HTTPException, status
 from fastapi.security import HTTPBearer
 from openai import OpenAI
-from decouple import config
 import base64
 import io
 from PIL import Image
@@ -45,7 +45,7 @@ security = HTTPBearer()
 
 def get_openai_client():
     """Get OpenAI client instance"""
-    api_key = config("OPENAI_API_KEY", default="")
+    api_key = os.getenv("OPENAI_API_KEY", default="")
     if not api_key:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

@@ -1,3 +1,4 @@
+import os
 from sqlalchemy import (
     create_engine,
     Column,
@@ -12,10 +13,9 @@ from sqlalchemy import (
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.sql import func
-from decouple import config
 
 # Database configuration
-DATABASE_URL = config("DATABASE_URL", default="sqlite:///./fashcheck.db")
+DATABASE_URL = os.getenv("DATABASE_URL", default="sqlite:///./fashcheck.db")
 
 # Create engine
 engine = create_engine(

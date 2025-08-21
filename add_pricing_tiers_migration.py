@@ -6,7 +6,6 @@ Run this script to update existing database with new pricing tier columns.
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
-from decouple import config
 import sys
 import os
 
@@ -18,7 +17,7 @@ def run_migration():
     """Add pricing tier fields to the User table"""
 
     # Database configuration
-    DATABASE_URL = config("DATABASE_URL", default="sqlite:///./fashcheck.db")
+    DATABASE_URL = os.getenv("DATABASE_URL", default="sqlite:///./fashcheck.db")
 
     # Create engine
     engine = create_engine(
