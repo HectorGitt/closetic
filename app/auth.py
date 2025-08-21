@@ -202,35 +202,44 @@ def get_user_preferences(user: User, db: Session) -> dict:
         .filter(PersonalStyleGuide.user_id == user.id)
         .first()
     )
-    try:
-        style_principles = (
-            json.loads(style_guide.style_principles)
-            if style_guide.style_principles
-            else []
-        )
-        color_palette = (
-            json.loads(style_guide.color_palette) if style_guide.color_palette else []
-        )
-        essential_pieces = (
-            json.loads(style_guide.essential_pieces)
-            if style_guide.essential_pieces
-            else []
-        )
-        shopping_priorities = (
-            json.loads(style_guide.shopping_priorities)
-            if style_guide.shopping_priorities
-            else []
-        )
-        styling_tips = (
-            json.loads(style_guide.styling_tips) if style_guide.styling_tips else []
-        )
-        preferences_snapshot = (
-            json.loads(style_guide.preferences_snapshot)
-            if style_guide.preferences_snapshot
-            else {}
-        )
-    except (json.JSONDecodeError, TypeError):
-        # Fallback for invalid JSON
+    if style_guide is not None:
+        try:
+            style_principles = (
+                json.loads(style_guide.style_principles)
+                if style_guide.style_principles
+                else []
+            )
+            color_palette = (
+                json.loads(style_guide.color_palette)
+                if style_guide.color_palette
+                else []
+            )
+            essential_pieces = (
+                json.loads(style_guide.essential_pieces)
+                if style_guide.essential_pieces
+                else []
+            )
+            shopping_priorities = (
+                json.loads(style_guide.shopping_priorities)
+                if style_guide.shopping_priorities
+                else []
+            )
+            styling_tips = (
+                json.loads(style_guide.styling_tips) if style_guide.styling_tips else []
+            )
+            preferences_snapshot = (
+                json.loads(style_guide.preferences_snapshot)
+                if style_guide.preferences_snapshot
+                else {}
+            )
+        except (json.JSONDecodeError, TypeError):
+            style_principles = []
+            color_palette = []
+            essential_pieces = []
+            shopping_priorities = []
+            styling_tips = []
+            preferences_snapshot = {}
+    else:
         style_principles = []
         color_palette = []
         essential_pieces = []
