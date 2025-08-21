@@ -11,4 +11,5 @@ numpy
 aiofiles
 python-dotenv
 requests
+sqlalchemy
 psutil
