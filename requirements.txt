@@ -8,9 +8,7 @@ openai
 pillow
 opencv-python
 numpy
-aiofiles
-python-dotenv
+aiofiless
 requests
 sqlalchemy
 psutil
-decouple
