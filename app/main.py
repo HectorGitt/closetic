@@ -8,6 +8,11 @@ from .routers import items, users, auth, calendar
 from .internal import admin
 from .models import create_tables
 import os
+from dotenv import load_dotenv
+
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Create FastAPI app instance
 app = FastAPI(
@@ -15,6 +20,7 @@ app = FastAPI(
     description="AI-powered fashion analysis and recommendation system",
     version="1.0.0",
 )
+print(os.getenv("CORS_ORIGINS", "No CORS origins set").split(","))
 
 # Add CORS middleware
 app.add_middleware(
