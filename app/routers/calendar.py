@@ -542,6 +542,7 @@ async def get_user_events(
                 detail="Access to Google Calendar denied. Please check your permissions.",
             )
         else:
+            logging.error(f"Google Calendar API error: {error}", exc_info=True)
             raise HTTPException(
                 status_code=500, detail=f"Google Calendar API error: {str(error)}"
             )
