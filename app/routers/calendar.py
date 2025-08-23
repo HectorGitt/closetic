@@ -883,7 +883,7 @@ async def get_monthly_outfit_plans(
             )
         else:
             # Get outfit plans for the next 30 days from today
-            today = datetime.now().date()
+            today = datetime.now(timezone.utc).date()
             end_date = today + timedelta(days=30)
             outfit_plans = (
                 db.query(OutfitPlan)
@@ -1460,8 +1460,8 @@ async def get_connection_status(
             ):
                 now = datetime.now(timezone.utc)
             else:
-                # Naive datetime: compare with naive local now
-                now = datetime.now()
+                # Naive datetime: compare with naive UTC now (normalize to UTC)
+                now = datetime.now(timezone.utc)
 
             try:
                 is_expired = expires_at < now
