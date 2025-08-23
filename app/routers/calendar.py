@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
+import logging
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
@@ -1414,24 +1415,31 @@ async def get_connection_status(
                 },
             }
 
-        # Check if token is expired
-        is_expired = token.expires_at < datetime.now()
+        # Check if token is expired, handle None expires_at
+        if not token.expires_at:
+            is_expired = True
+            expires_at_str = None
+        else:
+            is_expired = token.expires_at < datetime.now()
+            expires_at_str = token.expires_at.isoformat()
 
         return {
             "success": True,
             "data": {
                 "connected": not is_expired,
                 "token_id": token.id,
-                "expires_at": token.expires_at.isoformat(),
+                "expires_at": expires_at_str,
                 "scope": token.scope,
                 "is_expired": is_expired,
                 "message": "Google Calendar connected"
                 if not is_expired
-                else "Token expired, please reconnect",
+                else "Token expired or missing expiration, please reconnect",
             },
         }
 
     except Exception as e:
+        logging.error(f"Error in /calendar/google-calendar/status: {e}", exc_info=True)
+        print(f"[ERROR] /calendar/google-calendar/status: {e}")
         raise HTTPException(
             status_code=500, detail=f"Error checking connection status: {str(e)}"
         )
