@@ -453,50 +453,11 @@ async def get_user_events(
             # Remove +00:00 and use trailing Z which Google expects
             return dt.replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
-        # Helper: normalize input ISO date string (accepts offsets or Z) -> RFC3339 Z
-        def _normalize_input_date(s: str) -> Optional[str]:
-            try:
-                if not s:
-                    return None
-                s2 = s
-                # Allow incoming 'Z' by converting to +00:00 for fromisoformat
-                if s2.endswith("Z"):
-                    s2 = s2.replace("Z", "+00:00")
-                dt = datetime.fromisoformat(s2)
-                if (
-                    getattr(dt, "tzinfo", None) is None
-                    or dt.tzinfo.utcoffset(dt) is None
-                ):
-                    dt = dt.replace(tzinfo=timezone.utc)
-                else:
-                    dt = dt.astimezone(timezone.utc)
-                return dt.replace(microsecond=0).isoformat().replace("+00:00", "Z")
-            except Exception:
-                return None
-
-        # Set default date range if not provided
+        # Set default date range if not provided. Caller-supplied dates are assumed
+        # to be in a valid format; we only ensure our defaults are RFC3339 Z.
         if not start_date:
             start_date = _to_rfc3339_z(datetime.now(timezone.utc))
         if not end_date:
-            end_date = _to_rfc3339_z(datetime.now(timezone.utc) + timedelta(days=30))
-
-        # Normalize any provided date strings into RFC3339 Z format
-        try:
-            normalized_start = _normalize_input_date(start_date)
-            normalized_end = _normalize_input_date(end_date)
-            if normalized_start:
-                start_date = normalized_start
-            else:
-                start_date = _to_rfc3339_z(datetime.now(timezone.utc))
-            if normalized_end:
-                end_date = normalized_end
-            else:
-                end_date = _to_rfc3339_z(
-                    datetime.now(timezone.utc) + timedelta(days=30)
-                )
-        except Exception:
-            # Fallback defaults
-            start_date = _to_rfc3339_z(datetime.now(timezone.utc))
             end_date = _to_rfc3339_z(datetime.now(timezone.utc) + timedelta(days=30))
 
         # Call the Calendar API

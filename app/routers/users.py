@@ -3,7 +3,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from ..dependencies import get_openai_client
 from ..models import get_db, User, PersonalStyleGuide
 from ..auth import get_current_active_user
@@ -102,8 +102,8 @@ def check_tier_limits(user, action: str, db) -> Dict[str, Any]:
             return {"allowed": True, "remaining": -1}
 
         # Count outfit plans for current month
-        current_month = datetime.now().month
-        current_year = datetime.now().year
+        current_month = datetime.now(timezone.utc).month
+        current_year = datetime.now(timezone.utc).year
 
         from ..models import OutfitPlan
 
@@ -259,20 +259,22 @@ async def upgrade_pricing_tier(
 
         if tier_request.pricing_tier != "free":
             # Set subscription dates for paid tiers
-            current_user.subscription_start_date = datetime.now()
+            current_user.subscription_start_date = datetime.now(timezone.utc)
             if tier_request.subscription_months:
-                current_user.subscription_end_date = datetime.now() + timedelta(
-                    days=30 * tier_request.subscription_months
-                )
+                current_user.subscription_end_date = datetime.now(
+                    timezone.utc
+                ) + timedelta(days=30 * tier_request.subscription_months)
             else:
                 # Default to 1 month
-                current_user.subscription_end_date = datetime.now() + timedelta(days=30)
+                current_user.subscription_end_date = datetime.now(
+                    timezone.utc
+                ) + timedelta(days=30)
         else:
             # Free tier doesn't have subscription dates
             current_user.subscription_start_date = None
             current_user.subscription_end_date = None
 
-        current_user.updated_at = datetime.now()
+        current_user.updated_at = datetime.now(timezone.utc)
         db.commit()
 
         # Log activity
@@ -829,7 +831,7 @@ async def personal_fashion_analysis(
             "references": {
                 "style_guide": style_guide_reference,
                 "user_preferences": user_preferences,
-                "analysis_date": datetime.now().isoformat(),
+                "analysis_date": datetime.now(timezone.utc).isoformat(),
             },
         }
 

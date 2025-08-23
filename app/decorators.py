@@ -6,7 +6,7 @@ Using UserActivity table to track AI usage efficiently.
 from functools import wraps
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Callable
 from .models import UserActivity
 
@@ -83,7 +83,7 @@ def limit_ai_usage(
                 return await func(*args, **kwargs)
 
             # Calculate the time window for checking usage
-            now = datetime.now()
+            now = datetime.now(timezone.utc)
             if reset_period == "daily":
                 start_time = now.replace(hour=0, minute=0, second=0, microsecond=0)
             elif reset_period == "weekly":
@@ -232,7 +232,7 @@ def check_ai_usage_status(
         }
 
     # Calculate time window
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     if reset_period == "daily":
         start_time = now.replace(hour=0, minute=0, second=0, microsecond=0)
         reset_time = (now + timedelta(days=1)).replace(

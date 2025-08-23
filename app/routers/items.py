@@ -1,6 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Request
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
+from datetime import datetime, time, timezone
 
 from app.decorators import limit_ai_usage
 from ..dependencies import (
@@ -367,11 +368,10 @@ async def get_analysis_status(
 ):
     """Check if user can perform analysis today"""
     try:
-        from datetime import datetime, time
         from ..models import FashionAnalysis
 
         # Get start and end of today
-        today = datetime.now().date()
+        today = datetime.now(timezone.utc).date()
         start_of_day = datetime.combine(today, time.min)
         end_of_day = datetime.combine(today, time.max)
 
@@ -401,7 +401,11 @@ async def get_analysis_status(
         # Calculate time until next analysis allowed
         next_reset = None
         if not can_analyze:
-            tomorrow = datetime.combine(today.replace(day=today.day + 1), time.min)
+            # Use timedelta to safely get tomorrow (handles month/year rollovers)
+            from datetime import time as _time, timedelta as _timedelta
+
+            tomorrow_date = today + _timedelta(days=1)
+            tomorrow = datetime.combine(tomorrow_date, _time.min)
             next_reset = tomorrow.isoformat()
 
         return {
@@ -516,7 +520,7 @@ async def get_fashion_leaderboard(
             "data": {
                 "leaderboard": leaderboard,
                 "total_users": len(leaderboard),
-                "generated_at": datetime.now().isoformat(),
+                "generated_at": datetime.now(timezone.utc).isoformat(),
             },
             "message": "Leaderboard retrieved successfully",
         }
@@ -586,7 +590,7 @@ async def get_fashion_icon_leaderboard(
             "data": {
                 "fashion_icon": fashion_icon,
                 "criteria": f"Highest average overall score with minimum {min_analyses} analyses",
-                "generated_at": datetime.now().isoformat(),
+                "generated_at": datetime.now(timezone.utc).isoformat(),
             },
             "message": "Fashion icon retrieved successfully",
         }
