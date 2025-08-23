@@ -862,57 +862,194 @@ async def get_fashion_history(
         history = []
         for analysis in analyses:
             try:
-                # Parse analysis result JSON
+                # Parse analysis result JSON robustly (handle strings, double-encoded JSON, and dicts)
                 analysis_data = {}
                 if analysis.analysis_result:
                     if isinstance(analysis.analysis_result, str):
-                        analysis_data = json.loads(analysis.analysis_result)
+                        try:
+                            analysis_data = json.loads(analysis.analysis_result)
+                        except Exception:
+                            # Try double-encoded JSON
+                            try:
+                                analysis_data = json.loads(
+                                    json.loads(analysis.analysis_result)
+                                )
+                            except Exception:
+                                # Fallback to raw string container
+                                analysis_data = {"raw": analysis.analysis_result}
                     else:
                         analysis_data = analysis.analysis_result
 
-                # Extract scores and data from nested structure
-                overall_score = 0
-                color_harmony = 0
-                style_coherence = 0
+                # Helper to coerce numeric-like values to float safely
+                def to_float(val):
+                    try:
+                        if val is None:
+                            return 0.0
+                        return float(val)
+                    except Exception:
+                        try:
+                            return float(str(val))
+                        except Exception:
+                            return 0.0
+
+                # Locate the core analysis object in multiple possible shapes
+                core = None
+                recommendations_blob = None
+
+                if isinstance(analysis_data, dict):
+                    # Preferred nested path: { data: { analysis: {...}, recommendations: ... } }
+                    data_section = (
+                        analysis_data.get("data")
+                        if isinstance(analysis_data.get("data"), dict)
+                        else None
+                    )
+                    if data_section and isinstance(data_section.get("analysis"), dict):
+                        core = data_section.get("analysis")
+                        recommendations_blob = data_section.get("recommendations")
+                    else:
+                        # Try top-level keys commonly used
+                        core = (
+                            analysis_data.get("analysis")
+                            or analysis_data.get("result")
+                            or analysis_data.get("results")
+                            or analysis_data
+                        )
+                        recommendations_blob = (
+                            analysis_data.get("recommendations")
+                            or analysis_data.get("suggestions")
+                            or None
+                        )
+                else:
+                    core = {"description": str(analysis_data)}
+
+                # Ensure core is a dict
+                if not isinstance(core, dict):
+                    core = {"description": str(core)}
+
+                # Extract scores and text using several possible key names
+                # Handle alternate keys produced by different analyzers (e.g. overall_rating, color_analysis)
+                overall_score = (
+                    to_float(
+                        core.get("overall_score")
+                        or core.get("style_match_score")
+                        or core.get("overall")
+                        or core.get("score")
+                        or core.get("overall_rating")
+                    )
+                    * 10
+                )
+
+                color_harmony = to_float(
+                    core.get("color_harmony")
+                    or core.get("color_score")
+                    or core.get("color_harmony_score")
+                )
+
+                style_coherence = to_float(
+                    core.get("style_coherence")
+                    or core.get("style_score")
+                    or core.get("coherence")
+                )
+
+                # If analyzer provided textual fields like color_analysis / fit_analysis / texture_analysis,
+                # include them in the human-readable analysis_text and try to infer scores from overall_rating.
+                color_analysis_text = core.get("color_analysis") or core.get(
+                    "color_comment"
+                )
+                fit_analysis_text = core.get("fit_analysis") or core.get("fit_comment")
+                texture_analysis_text = core.get("texture_analysis") or core.get(
+                    "texture_comment"
+                )
+
+                # If numeric color/style scores are missing, we leave them as 0.0; frontend can present textual details.
+                analysis_text_candidates = [
+                    core.get("description"),
+                    core.get("text"),
+                    core.get("summary"),
+                    core.get("analysis_text"),
+                ]
+                # Append analyzer-specific textual parts
+                if color_analysis_text:
+                    analysis_text_candidates.append(color_analysis_text)
+                if fit_analysis_text:
+                    analysis_text_candidates.append(fit_analysis_text)
+                if texture_analysis_text:
+                    analysis_text_candidates.append(texture_analysis_text)
+
+                # Also include any narrative 'improvements' string in the main text
+                core_improvements_text = core.get("improvements")
+                if isinstance(core_improvements_text, str) and core_improvements_text:
+                    analysis_text_candidates.append(core_improvements_text)
+
+                analysis_text = next((c for c in analysis_text_candidates if c), "")
+
+                # Normalize recommendations into suggestions/improvements lists
                 suggestions = []
                 improvements = []
-                analysis_text = ""
 
-                # Handle different JSON structures
-                if isinstance(analysis_data, dict):
-                    # Try nested data.analysis structure
-                    if "data" in analysis_data and "analysis" in analysis_data["data"]:
-                        inner_analysis = analysis_data["data"]["analysis"]
-                        overall_score = inner_analysis.get("overall_score", 0)
-                        color_harmony = inner_analysis.get("color_harmony", 0)
-                        style_coherence = inner_analysis.get("style_coherence", 0)
-                        analysis_text = inner_analysis.get("description", "")
+                def ensure_list(v):
+                    if v is None:
+                        return []
+                    if isinstance(v, list):
+                        return v
+                    return [v]
 
-                        # Get recommendations
-                        if "recommendations" in analysis_data["data"]:
-                            recommendations = analysis_data["data"]["recommendations"]
-                            if isinstance(recommendations, dict):
-                                suggestions = recommendations.get("suggestions", [])
-                                improvements = recommendations.get("improvements", [])
-                            elif isinstance(recommendations, list):
-                                suggestions = recommendations
-
-                    # Try direct structure
+                # Primary: recommendations_blob
+                if recommendations_blob is not None:
+                    if isinstance(recommendations_blob, dict):
+                        suggestions = ensure_list(
+                            recommendations_blob.get("suggestions")
+                            or recommendations_blob.get("alternatives")
+                            or recommendations_blob.get("items")
+                        )
+                        improvements = ensure_list(
+                            recommendations_blob.get("improvements")
+                            or recommendations_blob.get("tips")
+                            or recommendations_blob.get("changes")
+                        )
+                        # Map common analyzer recommendation keys into our lists
+                        suggestions += ensure_list(
+                            recommendations_blob.get("immediate_improvements")
+                        )
+                        suggestions += ensure_list(
+                            recommendations_blob.get("styling_alternatives")
+                        )
+                        suggestions += ensure_list(
+                            recommendations_blob.get("styling_alternatives")
+                        )
+                        suggestions += ensure_list(
+                            recommendations_blob.get("accessories")
+                        )
+                        # shopping_list is actionable items; include as suggestions too
+                        suggestions += ensure_list(
+                            recommendations_blob.get("shopping_list")
+                        )
+                    elif isinstance(recommendations_blob, list):
+                        suggestions = recommendations_blob
                     else:
-                        overall_score = analysis_data.get("overall_score", 0)
-                        color_harmony = analysis_data.get("color_harmony", 0)
-                        style_coherence = analysis_data.get("style_coherence", 0)
-                        analysis_text = analysis_data.get("description", "")
-                        suggestions = analysis_data.get("suggestions", [])
-                        improvements = analysis_data.get("improvements", [])
+                        suggestions = ensure_list(recommendations_blob)
 
-                # Ensure suggestions and improvements are lists
-                if not isinstance(suggestions, list):
-                    suggestions = [str(suggestions)] if suggestions else []
-                if not isinstance(improvements, list):
-                    improvements = [str(improvements)] if improvements else []
+                # Secondary: check core fields for suggestions/improvements
+                if not suggestions:
+                    suggestions = ensure_list(
+                        core.get("suggestions") or core.get("recommendations")
+                    )
+                if not improvements:
+                    improvements = ensure_list(
+                        core.get("improvements") or core.get("tips")
+                    )
+
+                # Final normalization to strings
+                suggestions = [str(s) for s in suggestions if s is not None]
+                improvements = [str(i) for i in improvements if i is not None]
 
                 # Create fashion analysis object matching TypeScript interface
+                created_at_iso = (
+                    analysis.created_at.isoformat()
+                    if getattr(analysis, "created_at", None)
+                    else datetime.now(timezone.utc).isoformat()
+                )
+
                 fashion_analysis = {
                     "id": str(analysis.id),
                     "overall_score": float(overall_score) if overall_score else 0.0,
@@ -923,8 +1060,8 @@ async def get_fashion_history(
                     "suggestions": suggestions,
                     "improvements": improvements,
                     "analysis_text": analysis_text
-                    or f"Fashion analysis performed on {analysis.created_at.strftime('%B %d, %Y')}",
-                    "created_at": analysis.created_at.isoformat(),
+                    or f"Fashion analysis performed on {datetime.fromisoformat(created_at_iso).strftime('%B %d, %Y')}",
+                    "created_at": created_at_iso,
                     "user_id": str(current_user.id),
                     "image_url": None,  # Could be added later if storing image URLs
                 }
@@ -932,8 +1069,10 @@ async def get_fashion_history(
                 history.append(fashion_analysis)
 
             except Exception as e:
-                # Skip invalid entries but log the error
-                print(f"Error processing analysis {analysis.id}: {e}")
+                # Skip invalid entries but log the error for debugging
+                print(
+                    f"Error processing analysis {getattr(analysis, 'id', 'unknown')}: {e}"
+                )
                 continue
 
         # Get total count for pagination
