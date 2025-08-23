@@ -548,6 +548,8 @@ async def get_user_events(
     except HTTPException:
         raise
     except Exception as e:
+        logging.error(f"Error in /calendar/events: {e}", exc_info=True)
+        print(f"[ERROR] /calendar/events: {e}")
         raise HTTPException(
             status_code=500, detail=f"Error fetching calendar events: {str(e)}"
         )
