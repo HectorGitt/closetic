@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from app.decorators import limit_ai_usage
 from ..dependencies import get_openai_client
@@ -148,8 +148,10 @@ async def save_google_token(
 ):
     """Save Google Calendar token to database"""
     try:
-        # Calculate expiration time
-        expires_at = datetime.now() + timedelta(seconds=token_data.expires_in)
+        # Calculate expiration time (store as UTC-aware datetime)
+        expires_at = datetime.now(timezone.utc) + timedelta(
+            seconds=token_data.expires_in
+        )
 
         # Check if user already has a token
         existing_token = (
@@ -169,10 +171,11 @@ async def save_google_token(
                 if token_data.refresh_token
                 else None
             )
+            # store UTC-aware expires_at and updated_at
             existing_token.expires_at = expires_at
             existing_token.scope = token_data.scope
             existing_token.token_type = token_data.token_type
-            existing_token.updated_at = datetime.now()
+            existing_token.updated_at = datetime.now(timezone.utc)
 
             db.commit()
 
@@ -280,10 +283,19 @@ async def google_oauth_callback(
         # Get credentials
         creds = flow.credentials
 
-        # Calculate expiration time
-        expires_at = datetime.now() + timedelta(seconds=3600)  # Default 1 hour
+        # Calculate expiration time (store as UTC-aware)
+        expires_at = datetime.now(timezone.utc) + timedelta(
+            seconds=3600
+        )  # Default 1 hour
         if creds.expiry:
-            expires_at = creds.expiry.replace(tzinfo=None)
+            # Normalize creds.expiry to UTC-aware
+            if (
+                getattr(creds.expiry, "tzinfo", None) is None
+                or creds.expiry.tzinfo.utcoffset(creds.expiry) is None
+            ):
+                expires_at = creds.expiry.replace(tzinfo=timezone.utc)
+            else:
+                expires_at = creds.expiry.astimezone(timezone.utc)
 
         # Check if user already has a token
         existing_token = (
@@ -304,7 +316,7 @@ async def google_oauth_callback(
             existing_token.expires_at = expires_at
             existing_token.scope = " ".join(creds.scopes)
             existing_token.token_type = "Bearer"
-            existing_token.updated_at = datetime.now()
+            existing_token.updated_at = datetime.now(timezone.utc)
 
             db.commit()
 
@@ -378,7 +390,7 @@ async def get_user_events(
             .filter(
                 GoogleCalendarToken.user_id == current_user.id,
                 GoogleCalendarToken.is_active,
-                GoogleCalendarToken.expires_at > datetime.now(),
+                GoogleCalendarToken.expires_at > datetime.now(timezone.utc),
             )
             .first()
         )
@@ -417,9 +429,16 @@ async def get_user_events(
             # Update stored token in database
             token.access_token = encrypt_token(creds.token)
             if creds.expiry:
-                token.expires_at = creds.expiry.replace(tzinfo=None)
+                # Normalize creds.expiry to UTC-aware
+                if (
+                    getattr(creds.expiry, "tzinfo", None) is None
+                    or creds.expiry.tzinfo.utcoffset(creds.expiry) is None
+                ):
+                    token.expires_at = creds.expiry.replace(tzinfo=timezone.utc)
+                else:
+                    token.expires_at = creds.expiry.astimezone(timezone.utc)
             else:
-                token.expires_at = datetime.now() + timedelta(seconds=3600)
+                token.expires_at = datetime.now(timezone.utc) + timedelta(seconds=3600)
             db.commit()
 
         # Build the Calendar API service
@@ -427,9 +446,11 @@ async def get_user_events(
 
         # Set default date range if not provided
         if not start_date:
-            start_date = datetime.now().isoformat() + "Z"
+            start_date = datetime.now(timezone.utc).isoformat() + "Z"
         if not end_date:
-            end_date = (datetime.now() + timedelta(days=30)).isoformat() + "Z"
+            end_date = (
+                datetime.now(timezone.utc) + timedelta(days=30)
+            ).isoformat() + "Z"
 
         # Convert date strings to proper format if needed
         try:
@@ -441,8 +462,10 @@ async def get_user_events(
                 end_date = end_dt.isoformat() + "Z"
         except ValueError:
             # If date parsing fails, use defaults
-            start_date = datetime.now().isoformat() + "Z"
-            end_date = (datetime.now() + timedelta(days=30)).isoformat() + "Z"
+            start_date = datetime.now(timezone.utc).isoformat() + "Z"
+            end_date = (
+                datetime.now(timezone.utc) + timedelta(days=30)
+            ).isoformat() + "Z"
 
         # Call the Calendar API
         events_result = (
@@ -950,7 +973,7 @@ async def generate_monthly_outfit_plans(
 ):
     """Generate new outfit plans for a month based on calendar events and save to database"""
     try:
-        date = datetime.now()
+        date = datetime.now(timezone.utc)
         month = date.month
         year = date.year
         if month < 1 or month > 12:
@@ -964,7 +987,7 @@ async def generate_monthly_outfit_plans(
             .filter(
                 GoogleCalendarToken.user_id == current_user.id,
                 GoogleCalendarToken.is_active,
-                GoogleCalendarToken.expires_at > datetime.now(),
+                GoogleCalendarToken.expires_at > datetime.now(timezone.utc),
             )
             .first()
         )
@@ -1016,9 +1039,18 @@ async def generate_monthly_outfit_plans(
                 # Update stored token in database
                 token.access_token = encrypt_token(creds.token)
                 if creds.expiry:
-                    token.expires_at = creds.expiry.replace(tzinfo=None)
+                    # Normalize creds.expiry to UTC-aware
+                    if (
+                        getattr(creds.expiry, "tzinfo", None) is None
+                        or creds.expiry.tzinfo.utcoffset(creds.expiry) is None
+                    ):
+                        token.expires_at = creds.expiry.replace(tzinfo=timezone.utc)
+                    else:
+                        token.expires_at = creds.expiry.astimezone(timezone.utc)
                 else:
-                    token.expires_at = datetime.now() + timedelta(seconds=3600)
+                    token.expires_at = datetime.now(timezone.utc) + timedelta(
+                        seconds=3600
+                    )
                 db.commit()
 
             # Build the Calendar API service
@@ -1415,13 +1447,42 @@ async def get_connection_status(
                 },
             }
 
-        # Check if token is expired, handle None expires_at
+        # Check if token is expired, handle None expires_at and timezone-aware values
         if not token.expires_at:
             is_expired = True
             expires_at_str = None
         else:
-            is_expired = token.expires_at < datetime.now()
-            expires_at_str = token.expires_at.isoformat()
+            expires_at = token.expires_at
+            # If token.expires_at is timezone-aware, compare with aware UTC now
+            if (
+                getattr(expires_at, "tzinfo", None) is not None
+                and expires_at.tzinfo.utcoffset(expires_at) is not None
+            ):
+                now = datetime.now(timezone.utc)
+            else:
+                # Naive datetime: compare with naive local now
+                now = datetime.now()
+
+            try:
+                is_expired = expires_at < now
+            except TypeError:
+                # As a fallback, normalize both to UTC-aware
+                try:
+                    expires_aware = (
+                        expires_at.replace(tzinfo=timezone.utc)
+                        if getattr(expires_at, "tzinfo", None) is None
+                        else expires_at.astimezone(timezone.utc)
+                    )
+                    now_aware = datetime.now(timezone.utc)
+                    is_expired = expires_aware < now_aware
+                except Exception:
+                    # If all else fails, mark expired to force reconnect
+                    is_expired = True
+
+            try:
+                expires_at_str = expires_at.isoformat()
+            except Exception:
+                expires_at_str = None
 
         return {
             "success": True,
