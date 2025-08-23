@@ -545,7 +545,8 @@ async def get_user_events(
             raise HTTPException(
                 status_code=500, detail=f"Google Calendar API error: {str(error)}"
             )
-    except HTTPException:
+    except HTTPException as e:
+        logging.error(f"HTTP error in /calendar/events: {e}", exc_info=True)
         raise
     except Exception as e:
         logging.error(f"Error in /calendar/events: {e}", exc_info=True)
