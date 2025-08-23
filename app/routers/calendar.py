@@ -444,28 +444,60 @@ async def get_user_events(
         # Build the Calendar API service
         service = build("calendar", "v3", credentials=creds)
 
+        # Helper: format a datetime to RFC3339 with trailing 'Z' (no '+00:00Z')
+        def _to_rfc3339_z(dt: datetime) -> str:
+            if getattr(dt, "tzinfo", None) is None or dt.tzinfo.utcoffset(dt) is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            else:
+                dt = dt.astimezone(timezone.utc)
+            # Remove +00:00 and use trailing Z which Google expects
+            return dt.replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+        # Helper: normalize input ISO date string (accepts offsets or Z) -> RFC3339 Z
+        def _normalize_input_date(s: str) -> Optional[str]:
+            try:
+                if not s:
+                    return None
+                s2 = s
+                # Allow incoming 'Z' by converting to +00:00 for fromisoformat
+                if s2.endswith("Z"):
+                    s2 = s2.replace("Z", "+00:00")
+                dt = datetime.fromisoformat(s2)
+                if (
+                    getattr(dt, "tzinfo", None) is None
+                    or dt.tzinfo.utcoffset(dt) is None
+                ):
+                    dt = dt.replace(tzinfo=timezone.utc)
+                else:
+                    dt = dt.astimezone(timezone.utc)
+                return dt.replace(microsecond=0).isoformat().replace("+00:00", "Z")
+            except Exception:
+                return None
+
         # Set default date range if not provided
         if not start_date:
-            start_date = datetime.now(timezone.utc).isoformat() + "Z"
+            start_date = _to_rfc3339_z(datetime.now(timezone.utc))
         if not end_date:
-            end_date = (
-                datetime.now(timezone.utc) + timedelta(days=30)
-            ).isoformat() + "Z"
+            end_date = _to_rfc3339_z(datetime.now(timezone.utc) + timedelta(days=30))
 
-        # Convert date strings to proper format if needed
+        # Normalize any provided date strings into RFC3339 Z format
         try:
-            if not start_date.endswith("Z"):
-                start_dt = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
-                start_date = start_dt.isoformat() + "Z"
-            if not end_date.endswith("Z"):
-                end_dt = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
-                end_date = end_dt.isoformat() + "Z"
-        except ValueError:
-            # If date parsing fails, use defaults
-            start_date = datetime.now(timezone.utc).isoformat() + "Z"
-            end_date = (
-                datetime.now(timezone.utc) + timedelta(days=30)
-            ).isoformat() + "Z"
+            normalized_start = _normalize_input_date(start_date)
+            normalized_end = _normalize_input_date(end_date)
+            if normalized_start:
+                start_date = normalized_start
+            else:
+                start_date = _to_rfc3339_z(datetime.now(timezone.utc))
+            if normalized_end:
+                end_date = normalized_end
+            else:
+                end_date = _to_rfc3339_z(
+                    datetime.now(timezone.utc) + timedelta(days=30)
+                )
+        except Exception:
+            # Fallback defaults
+            start_date = _to_rfc3339_z(datetime.now(timezone.utc))
+            end_date = _to_rfc3339_z(datetime.now(timezone.utc) + timedelta(days=30))
 
         # Call the Calendar API
         events_result = (
