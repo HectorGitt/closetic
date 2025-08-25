@@ -729,7 +729,6 @@ async def add_wardrobe_items(
         response = client.chat.completions.create(
             model="gpt-4",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=1500,
             temperature=0.3,
         )
 
@@ -1039,6 +1038,19 @@ async def generate_monthly_outfit_plans(
                 detail="No valid Google Calendar token found. Please connect your calendar first.",
             )
 
+        current_outfit_plans = (
+            db.query(OutfitPlan).filter(OutfitPlan.user_id == current_user.id).all()
+        )
+
+        if len(current_outfit_plans) > 0 and current_user.pricing_tier == "free":
+            return {
+                "success": False,
+                "status": 403,
+                "data": {
+                    "message": "Free tier users can only have one outfit plan generation."
+                },
+            }
+
         # Get user's wardrobe items
         wardrobe_items = (
             db.query(WardrobeItem).filter(WardrobeItem.user_id == current_user.id).all()
@@ -1220,7 +1232,6 @@ async def generate_monthly_outfit_plans(
                 response = client.chat.completions.create(
                     model="gpt-4",
                     messages=[{"role": "user", "content": prompt}],
-                    max_tokens=800,
                     temperature=0.3,
                 )
 
@@ -1525,7 +1536,7 @@ async def get_connection_status(
             except Exception:
                 expires_at_str = None
 
-        return {
+        """ return {
             "success": True,
             "data": {
                 "connected": not is_expired,
@@ -1535,9 +1546,110 @@ async def get_connection_status(
                 "is_expired": is_expired,
                 "message": "Google Calendar connected"
                 if not is_expired
-                else "Token expired or missing expiration, please reconnect",
+                else "Token expired or missing expiration, attempting refresh if possible",
             },
-        }
+        } """
+
+        if is_expired:
+            try:
+                # Attempt to construct credentials and refresh
+                try:
+                    access_token = decrypt_token(token.access_token)
+                    refresh_token = (
+                        decrypt_token(token.refresh_token)
+                        if token.refresh_token
+                        else None
+                    )
+                except Exception:
+                    access_token = token.access_token
+                    refresh_token = token.refresh_token
+
+                if refresh_token:
+                    creds = Credentials(
+                        token=access_token,
+                        refresh_token=refresh_token,
+                        token_uri="https://oauth2.googleapis.com/token",
+                        client_id=os.getenv("GOOGLE_CLIENT_ID"),
+                        client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
+                        scopes=token.scope.split(" ")
+                        if token.scope
+                        else ["https://www.googleapis.com/auth/calendar.readonly"],
+                    )
+
+                    # Only attempt refresh if credentials report expired and have a refresh token
+                    if creds.refresh_token and (
+                        getattr(creds, "expired", False) or is_expired
+                    ):
+                        creds.refresh(Request())
+
+                        # Update stored token
+                        token.access_token = encrypt_token(creds.token)
+                        if creds.expiry:
+                            if (
+                                getattr(creds.expiry, "tzinfo", None) is None
+                                or creds.expiry.tzinfo.utcoffset(creds.expiry) is None
+                            ):
+                                token.expires_at = creds.expiry.replace(
+                                    tzinfo=timezone.utc
+                                )
+                            else:
+                                token.expires_at = creds.expiry.astimezone(timezone.utc)
+                        else:
+                            token.expires_at = datetime.now(timezone.utc) + timedelta(
+                                seconds=3600
+                            )
+
+                        token.updated_at = datetime.now(timezone.utc)
+                        db.commit()
+
+                        expires_at_str = (
+                            token.expires_at.isoformat() if token.expires_at else None
+                        )
+
+                        return {
+                            "success": True,
+                            "data": {
+                                "connected": True,
+                                "token_id": token.id,
+                                "expires_at": expires_at_str,
+                                "scope": token.scope,
+                                "is_expired": False,
+                                "message": "Token refreshed and calendar reconnected",
+                            },
+                        }
+                # If we get here, refresh not possible
+                print("Refresh token not available or expired")
+                return {
+                    "success": True,
+                    "data": {
+                        "connected": False,
+                        "token_id": token.id,
+                        "expires_at": expires_at_str,
+                        "scope": token.scope,
+                        "is_expired": True,
+                        "message": "Token expired and refresh not available; please reconnect",
+                    },
+                }
+            except Exception as e:
+                logging.error(f"Error refreshing Google token: {e}", exc_info=True)
+                return {
+                    "success": False,
+                    "data": {"connected": False, "token_id": token.id},
+                    "message": f"Error refreshing token: {str(e)}",
+                }
+
+        else:
+            return {
+                "success": True,
+                "data": {
+                    "connected": True,
+                    "token_id": token.id,
+                    "expires_at": expires_at_str,
+                    "scope": token.scope,
+                    "is_expired": False,
+                    "message": "Calendar Connected",
+                },
+            }
 
     except Exception as e:
         logging.error(f"Error in /calendar/google-calendar/status: {e}", exc_info=True)
