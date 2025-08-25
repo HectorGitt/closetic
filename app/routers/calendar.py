@@ -643,11 +643,53 @@ async def add_wardrobe_items(
     # check user max wardrobe items
     from fastapi import status
 
-    if current_user.wardrobe_items_count >= current_user.max_wardrobe_items:
+    # Determine max allowed wardrobe items:
+    # prefer explicit per-user override (current_user.max_wardrobe_items),
+    # otherwise ask the users router for tier limits via get_tier_features.
+    user_override = getattr(current_user, "max_wardrobe_items", None)
+    if user_override is not None:
+        try:
+            max_allowed = int(user_override)
+        except Exception:
+            max_allowed = None
+    else:
+        # Import locally to avoid potential circular imports at module import time
+        try:
+            from ..routers.users import get_tier_features
+
+            tier = getattr(current_user, "pricing_tier", None) or "free"
+            tier_features = get_tier_features(tier)
+            # The users helper uses 'max_wardrobe_items' as the key
+            max_allowed = tier_features.get("max_wardrobe_items", None)
+        except Exception:
+            # Fallback conservative defaults if users helper not available
+            tier_fallback = {
+                "free": 50,
+                "spotlight": 200,
+                "elite": 500,
+                "icon": -1,
+            }
+            tier = getattr(current_user, "pricing_tier", None) or "free"
+            max_allowed = tier_fallback.get(str(tier).lower(), tier_fallback["free"])
+
+    # Treat None as unlimited as a safe default
+    if max_allowed is None:
+        max_allowed = -1
+
+    # Ensure we have a numeric count to compare
+    current_count = (
+        db.query(WardrobeItem).filter(WardrobeItem.user_id == current_user.id).count()
+        or 0
+    )
+
+    # Enforce limit (skip if unlimited)
+    if max_allowed != -1 and current_count >= max_allowed:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Max wardrobe items limit reached",
+            detail=f"Max wardrobe items limit reached ({current_count}/{max_allowed})",
         )
+
+    print(f"Current wardrobe items count: {current_count}, Max allowed: {max_allowed}")
 
     try:
         # Use AI to process the description into structured wardrobe items
