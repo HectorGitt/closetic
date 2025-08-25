@@ -689,8 +689,6 @@ async def add_wardrobe_items(
             detail=f"Max wardrobe items limit reached ({current_count}/{max_allowed})",
         )
 
-    print(f"Current wardrobe items count: {current_count}, Max allowed: {max_allowed}")
-
     try:
         # Use AI to process the description into structured wardrobe items
         prompt = f"""
@@ -740,7 +738,7 @@ async def add_wardrobe_items(
             items_data = json.loads(response.choices[0].message.content)
         except json.JSONDecodeError:
             # Fallback: create a single item from the description
-            items_data = [
+            """ items_data = [
                 {
                     "category": "item",
                     "subcategory": None,
@@ -753,7 +751,11 @@ async def add_wardrobe_items(
                     "occasion": ["casual"],
                     "tags": ["wardrobe"],
                 }
-            ]
+            ] """
+            return {
+                "status": status.HTTP_503_SERVICE_UNAVAILABLE,
+                "detail": "Error processing wardrobe description",
+            }
 
         # Save items to database
         saved_items = []
