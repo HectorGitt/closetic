@@ -707,6 +707,8 @@ async def add_wardrobe_items(
         - season (spring, summer, fall, winter, or "all")
         - occasion (array of: casual, formal, business, party, sport, etc.)
         - tags (array of descriptive tags)
+
+        If a line specifies a number of items (e.g., “2 White Shirts”), you must create that many separate JSON objects, each representing one clothing item.
         
         Return as JSON array with these fields. If a field is not available, use null.
         Example:
