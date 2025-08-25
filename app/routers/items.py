@@ -342,7 +342,6 @@ async def get_style_suggestions(
         response = client.chat.completions.create(
             model="gpt-4",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=800,
         )
 
         suggestions = response.choices[0].message.content
@@ -448,7 +447,6 @@ async def generate_recommendations(client, analysis: dict) -> dict:
         response = client.chat.completions.create(
             model="gpt-4",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=600,
         )
 
         try:
@@ -724,7 +722,7 @@ async def fashion_chatbot(
 
         # Get AI response
         response = client.chat.completions.create(
-            model="gpt-4", messages=messages, max_tokens=800, temperature=0.7
+            model="gpt-4", messages=messages, temperature=0.7
         )
 
         ai_response = response.choices[0].message.content
@@ -772,7 +770,7 @@ async def fashion_chatbot(
             "data": ChatbotResponse(
                 response=ai_response,
                 conversation_id=conversation_id,
-                context_used=context,
+                # context_used=context,
                 message_count=usage_stats["current_usage"] + 1,
                 remaining_messages=usage_stats["remaining"] - 1
                 if usage_stats["remaining"] > 0
