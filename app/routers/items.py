@@ -340,7 +340,7 @@ async def get_style_suggestions(
 
     try:
         response = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
         )
 
@@ -445,7 +445,7 @@ async def generate_recommendations(client, analysis: dict) -> dict:
         """
 
         response = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
         )
 
@@ -722,7 +722,7 @@ async def fashion_chatbot(
 
         # Get AI response
         response = client.chat.completions.create(
-            model="gpt-4", messages=messages, temperature=0.7
+            model="gpt-4o-mini", messages=messages, temperature=0.7
         )
 
         ai_response = response.choices[0].message.content

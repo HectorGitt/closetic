@@ -1178,7 +1178,7 @@ async def generate_personal_style_guide(client, preferences: UserPreferences) ->
     """
 
     response = client.responses.parse(
-        model="gpt-4o-2024-08-06",
+        model="gpt-4o-mini",
         input=[
             {
                 "role": "system",
@@ -1231,7 +1231,7 @@ async def generate_personalized_analysis(
 
     try:
         response = client.responses.parse(
-            model="gpt-4o-2024-08-06",
+            model="gpt-4o-mini",
             input=[
                 {
                     "role": "system",
@@ -1246,7 +1246,7 @@ async def generate_personalized_analysis(
     except Exception:
         # Fallback to regular completion
         response = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o-mini",
             messages=[
                 {
                     "role": "user",
@@ -1285,7 +1285,7 @@ async def check_style_compatibility(
 
     try:
         response = client.responses.parse(
-            model="gpt-4o-2024-08-06",
+            model="gpt-4o-mini",
             input=[
                 {
                     "role": "system",
@@ -1300,7 +1300,7 @@ async def check_style_compatibility(
     except Exception:
         # Fallback to regular completion
         response = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o-mini",
             messages=[
                 {
                     "role": "user",
@@ -1339,7 +1339,7 @@ async def generate_wardrobe_plan(client, preferences: UserPreferences) -> dict:
 
     try:
         response = client.responses.parse(
-            model="gpt-4o-2024-08-06",
+            model="gpt-4o-mini",
             input=[
                 {
                     "role": "system",
@@ -1354,7 +1354,7 @@ async def generate_wardrobe_plan(client, preferences: UserPreferences) -> dict:
     except Exception:
         # Fallback to regular completion
         response = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o-mini",
             messages=[
                 {
                     "role": "user",

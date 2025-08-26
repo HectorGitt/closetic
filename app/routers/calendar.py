@@ -729,7 +729,7 @@ async def add_wardrobe_items(
         """
 
         response = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
         )
@@ -1232,7 +1232,7 @@ async def generate_monthly_outfit_plans(
 
             try:
                 response = client.chat.completions.create(
-                    model="gpt-4",
+                    model="gpt-4o-mini",
                     messages=[{"role": "user", "content": prompt}],
                     temperature=0.3,
                 )

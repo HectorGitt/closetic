@@ -167,7 +167,7 @@ async def analyze_fashion_with_openai(
         prompt = prompts.get(analysis_type, prompts["comprehensive"])
 
         response = client.responses.parse(
-            model="gpt-4o-2024-08-06",
+            model="gpt-4o-mini",
             input=[
                 {"role": "system", "content": prompt},
                 {
