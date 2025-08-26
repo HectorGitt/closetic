@@ -1126,7 +1126,7 @@ async def generate_monthly_outfit_plans(
                     calendarId="primary",
                     timeMin=start_date,
                     timeMax=end_date,
-                    maxResults=100,
+                    maxResults=15,
                     singleEvents=True,
                     orderBy="startTime",
                 )
@@ -1200,7 +1200,7 @@ async def generate_monthly_outfit_plans(
 
         # Generate outfit plans for each event
         outfit_plans = []
-        for event in calendar_events:
+        for event in calendar_events[:10]:
             # Create AI prompt for outfit planning
             prompt = f"""
             Create an outfit plan for this event:
