@@ -91,6 +91,7 @@ def decrypt_token(encrypted_token: str) -> str:
     except Exception:
         return encrypted_token
 
+    Given a GoogleCalendarToken SQLAlchemy object, refresh the token if expired or force_refresh is True.
 
 @router.get("/google-auth-url")
 async def get_google_auth_url():
@@ -390,7 +391,6 @@ async def get_user_events(
             .filter(
                 GoogleCalendarToken.user_id == current_user.id,
                 GoogleCalendarToken.is_active,
-                GoogleCalendarToken.expires_at > datetime.now(timezone.utc),
             )
             .first()
         )
@@ -424,22 +424,13 @@ async def get_user_events(
         )
 
         # Refresh token if needed
+        print("Checking if token needs refresh..., ", creds.expired)
         if creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-            # Update stored token in database
-            token.access_token = encrypt_token(creds.token)
-            if creds.expiry:
-                # Normalize creds.expiry to UTC-aware
-                if (
-                    getattr(creds.expiry, "tzinfo", None) is None
-                    or creds.expiry.tzinfo.utcoffset(creds.expiry) is None
-                ):
-                    token.expires_at = creds.expiry.replace(tzinfo=timezone.utc)
-                else:
-                    token.expires_at = creds.expiry.astimezone(timezone.utc)
-            else:
-                token.expires_at = datetime.now(timezone.utc) + timedelta(seconds=3600)
-            db.commit()
+            creds, refreshed, error = refresh_google_token_if_needed(token, db)
+            if error:
+                raise HTTPException(status_code=403, detail=error)
+            if refreshed:
+                print("Token was refreshed.")
 
         # Build the Calendar API service
         service = build("calendar", "v3", credentials=creds)
