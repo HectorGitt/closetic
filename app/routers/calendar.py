@@ -1160,12 +1160,19 @@ async def generate_monthly_outfit_plans(
             service = build("calendar", "v3", credentials=creds)
 
             # Set date range for the month
-            start_date = f"{year}-{month:02d}-01T00:00:00Z"
-            # Calculate last day of month
-            if month == 12:
-                end_date = f"{year + 1}-01-01T00:00:00Z"
-            else:
-                end_date = f"{year}-{month + 1:02d}-01T00:00:00Z"
+            # Set date range: today to 30 days from now (UTC, RFC3339 Z format)
+            today = datetime.now(timezone.utc)
+            start_date = (
+                today.replace(hour=0, minute=0, second=0, microsecond=0)
+                .isoformat()
+                .replace("+00:00", "Z")
+            )
+            end_date = (
+                (today + timedelta(days=30))
+                .replace(hour=23, minute=59, second=59, microsecond=0)
+                .isoformat()
+                .replace("+00:00", "Z")
+            )
 
             # Call the Calendar API
             events_result = (
