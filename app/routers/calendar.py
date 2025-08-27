@@ -573,7 +573,7 @@ async def get_user_events(
                 token.is_active = False
                 db.commit()
             raise HTTPException(
-                status_code=401,
+                status_code=403,
                 detail="Google Calendar authentication failed. Please reconnect your calendar.",
             )
         elif error.resp.status == 403:
