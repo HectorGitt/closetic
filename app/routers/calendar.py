@@ -1076,16 +1076,17 @@ async def generate_monthly_outfit_plans(
             .filter(
                 GoogleCalendarToken.user_id == current_user.id,
                 GoogleCalendarToken.is_active,
-                GoogleCalendarToken.expires_at > datetime.now(timezone.utc),
             )
             .first()
         )
 
         if not token:
             raise HTTPException(
-                status_code=401,
+                status_code=403,
                 detail="No valid Google Calendar token found. Please connect your calendar first.",
             )
+        creds, refreshed, error = refresh_google_token_if_needed(token, db)
+        token = creds if refreshed else token
 
         current_outfit_plans = (
             db.query(OutfitPlan).filter(OutfitPlan.user_id == current_user.id).all()
