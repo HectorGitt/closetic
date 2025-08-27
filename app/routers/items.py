@@ -36,12 +36,12 @@ class ChatbotRequest(BaseModel):
     conversation_id: Optional[str] = None
     include_wardrobe: Optional[bool] = True
     include_preferences: Optional[bool] = True
+    include_events: Optional[bool] = True
 
 
 class ChatbotResponse(BaseModel):
     response: str
     conversation_id: str
-    context_used: dict
     message_count: int
     remaining_messages: int
 
@@ -708,7 +708,11 @@ async def fashion_chatbot(
     try:
         # Get user context
         context = await get_user_fashion_context(
-            db, current_user, request.include_wardrobe, request.include_preferences
+            db,
+            current_user,
+            request.include_wardrobe,
+            request.include_preferences,
+            request.include_events,
         )
 
         # Build conversation prompt with context
@@ -784,7 +788,11 @@ async def fashion_chatbot(
 
 
 async def get_user_fashion_context(
-    db: Session, user, include_wardrobe: bool = True, include_preferences: bool = True
+    db: Session,
+    user,
+    include_wardrobe: bool = True,
+    include_preferences: bool = True,
+    include_events: bool = True,
 ) -> dict:
     """Get user's fashion context including preferences and wardrobe"""
 
@@ -954,7 +962,9 @@ Always be encouraging, specific, and actionable in your advice. Consider the use
     prompt += """\n
 Based on this information, provide personalized fashion advice. Reference specific items from their wardrobe when relevant, and suggest combinations that align with their style preferences and occasions they dress for.
 
-Keep responses conversational, helpful, and specific to their needs."""
+Keep responses conversational, helpful, and specific to their needs. and no markdown like *** or # 
+
+Quit the intro and be concise and direct in your responses."""
 
     return prompt
 
