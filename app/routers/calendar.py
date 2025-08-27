@@ -91,7 +91,63 @@ def decrypt_token(encrypted_token: str) -> str:
     except Exception:
         return encrypted_token
 
+
+def refresh_google_token_if_needed(token, db, force_refresh=False):
+    """
     Given a GoogleCalendarToken SQLAlchemy object, refresh the token if expired or force_refresh is True.
+    Returns (creds, refreshed: bool, error: Optional[str])
+    """
+    from google.oauth2.credentials import Credentials
+    from google.auth.transport.requests import Request
+    import os
+    from datetime import datetime, timezone, timedelta
+
+    try:
+        access_token = decrypt_token(token.access_token)
+        refresh_token = (
+            decrypt_token(token.refresh_token) if token.refresh_token else None
+        )
+    except Exception:
+        access_token = token.access_token
+        refresh_token = token.refresh_token
+
+    creds = Credentials(
+        token=access_token,
+        refresh_token=refresh_token,
+        token_uri="https://oauth2.googleapis.com/token",
+        client_id=os.getenv("GOOGLE_CLIENT_ID"),
+        client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
+        scopes=token.scope.split(" ")
+        if token.scope
+        else ["https://www.googleapis.com/auth/calendar.readonly"],
+    )
+
+    # Determine if refresh is needed
+    expired = getattr(creds, "expired", False)
+    needs_refresh = (expired or force_refresh) and creds.refresh_token
+
+    if needs_refresh:
+        try:
+            creds.refresh(Request())
+            # Update stored token
+            token.access_token = encrypt_token(creds.token)
+            if creds.expiry:
+                if (
+                    getattr(creds.expiry, "tzinfo", None) is None
+                    or creds.expiry.tzinfo.utcoffset(creds.expiry) is None
+                ):
+                    token.expires_at = creds.expiry.replace(tzinfo=timezone.utc)
+                else:
+                    token.expires_at = creds.expiry.astimezone(timezone.utc)
+            else:
+                token.expires_at = datetime.now(timezone.utc) + timedelta(seconds=3600)
+            token.updated_at = datetime.now(timezone.utc)
+            db.commit()
+            return creds, True, None
+        except Exception as e:
+            return creds, False, f"Error refreshing token: {str(e)}"
+    return creds, False, None
+
 
 @router.get("/google-auth-url")
 async def get_google_auth_url():
@@ -1189,48 +1245,56 @@ async def generate_monthly_outfit_plans(
                 }
             )
 
-        # Generate outfit plans for each event
+        # Generate outfit plans for all events in a single OpenAI call
         outfit_plans = []
-        for event in calendar_events[:10]:
-            # Create AI prompt for outfit planning
-            prompt = f"""
-            Create an outfit plan for this event:
-            Event: {event["title"]}
-            Description: {event["description"]}
-            Location: {event["location"]}
-            Date: {event["date"]}
-            Season: {get_season_from_date(event["date"])}
-            
-            Available wardrobe items:
-            {json.dumps(wardrobe_summary, indent=2)}
-            
-            Provide:
-            1. Main outfit description
-            2. Specific wardrobe item IDs to use
-            3. Alternative suggestions if items aren't suitable
-            4. Weather considerations
-            5. Confidence score (0-100)
-            
-            Format as JSON:
-            {{
-                "outfit_description": "detailed outfit description",
-                "wardrobe_item_ids": [list of item IDs],
-                "alternatives": ["alternative outfit ideas"],
-                "weather_considerations": "weather-based advice",
-                "confidence_score": 85
-            }}
-            """
+        # Prepare prompt for all events
+        prompt = f"""
+        For each of the following calendar events, generate an outfit plan using the available wardrobe items. 
+        For each event, provide:
+        1. Main outfit description
+        2. Specific wardrobe item IDs to use
+        3. Alternative suggestions if items aren't suitable
+        4. Weather considerations
+        5. Confidence score (0-100)
 
+        Format your response as a JSON array, where each element corresponds to an event and includes:
+        {{
+            "date": "YYYY-MM-DD",
+            "event_title": "...",
+            "event_description": "...",
+            "outfit_description": "...",
+            "wardrobe_item_ids": [list of item IDs],
+            "alternatives": ["..."],
+            "weather_considerations": "...",
+            "confidence_score": 85
+        }}
+
+        Calendar Events:
+        {json.dumps(calendar_events[:10], indent=2)}
+
+        Available wardrobe items:
+        {json.dumps(wardrobe_summary, indent=2)}
+
+        Do not enclose your response in a ```json block.
+        """
+
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.3,
+            )
+            print(f"AI response for all events: {response.choices[0].message.content}")
+            all_outfits = json.loads(response.choices[0].message.content)
+        except Exception as e:
+            print(f"Error generating outfits for events: {e}")
+            raise HTTPException(
+                status_code=500, detail=f"Error generating outfit plans: {str(e)}"
+            )
+
+        # Save each outfit plan to database
+        for event, outfit_data in zip(calendar_events[:10], all_outfits):
             try:
-                response = client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=[{"role": "user", "content": prompt}],
-                    temperature=0.3,
-                )
-
-                outfit_data = json.loads(response.choices[0].message.content)
-
-                # Save outfit plan to database
                 new_plan = OutfitPlan(
                     user_id=current_user.id,
                     date=datetime.strptime(event["date"], "%Y-%m-%d"),
@@ -1245,10 +1309,8 @@ async def generate_monthly_outfit_plans(
                     weather_considerations=outfit_data.get("weather_considerations"),
                     confidence_score=outfit_data.get("confidence_score", 0),
                 )
-
                 db.add(new_plan)
                 db.flush()
-
                 outfit_plans.append(
                     {
                         "id": new_plan.id,
@@ -1264,11 +1326,9 @@ async def generate_monthly_outfit_plans(
                         "confidence_score": outfit_data.get("confidence_score", 0),
                     }
                 )
-
             except Exception as e:
-                print(f"Error generating outfit for event {event['title']}: {e}")
+                print(f"Error saving outfit plan for event {event['title']}: {e}")
                 continue
-
         db.commit()
 
         # Log activity
