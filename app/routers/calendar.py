@@ -1251,8 +1251,8 @@ async def generate_monthly_outfit_plans(
         # Prepare prompt for all events
         prompt = f"""
         For each of the following calendar events, generate an outfit plan using the available wardrobe items. 
-        For each event, provide:
-        1. Main outfit description(specific combination and description of wardrobe items)
+        For each event, provide detailed information for:
+        1. Main outfit description (specific combination and description of wardrobe items mentioning the items, colors, and styles)
         2. Specific wardrobe item IDs to use
         3. Alternative suggestions if items aren't suitable
         4. Weather considerations
