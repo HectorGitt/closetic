@@ -758,7 +758,7 @@ async def add_wardrobe_items(
         If a line specifies a number of items (e.g., “2 White Shirts”), you must create that many separate JSON objects, each representing one clothing item.
         
         Return as JSON array with these fields. If a field is not available, use null.
-        Example:
+        Example do not enclose in ```json``` blocks:
         [
             {{
                 "category": "shirt",
@@ -800,10 +800,10 @@ async def add_wardrobe_items(
                     "tags": ["wardrobe"],
                 }
             ] """
-            return {
-                "status": status.HTTP_503_SERVICE_UNAVAILABLE,
-                "detail": "Error processing wardrobe description",
-            }
+            raise HTTPException(
+                status_code=500,
+                detail="AI response parsing error: Invalid JSON format",
+            )
 
         # Save items to database
         saved_items = []
