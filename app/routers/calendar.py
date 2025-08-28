@@ -1439,6 +1439,244 @@ async def generate_monthly_outfit_plans(
         )
 
 
+@router.post("/outfit-plans/single")
+async def generate_outfit_plan_for_event(
+    event: CalendarEvent,
+    db: Session = Depends(get_db),
+    client=Depends(get_openai_client),
+    current_user=Depends(get_current_active_user),
+):
+    """Generate a single outfit plan for a specific event"""
+    # Get all outfit plans within 7 days (before or after) of the event date to avoid duplicate outfits
+    # Ensure event.start_time is a datetime object
+    event_date = event.start_time
+    if isinstance(event_date, str):
+        try:
+            event_date = datetime.fromisoformat(event_date)
+        except Exception:
+            event_date = (
+                datetime.strptime(event_date, "%Y-%m-%dT%H:%M:%S%z")
+                if "T" in event_date
+                else datetime.strptime(event_date, "%Y-%m-%d")
+            )
+    event_date = event_date.date() if hasattr(event_date, "date") else event_date
+
+    week_start = event_date - timedelta(days=3)
+    week_end = event_date + timedelta(days=3)
+
+    existing_plans = (
+        db.query(OutfitPlan)
+        .filter(
+            OutfitPlan.user_id == current_user.id,
+            OutfitPlan.date >= week_start,
+            OutfitPlan.date <= week_end,
+        )
+        .all()
+    )
+    plan_summary = []
+    for plan in existing_plans:
+        plan_summary.append(
+            {
+                "id": plan.id,
+                "date": str(plan.date),
+                "event_title": plan.event_title,
+                "event_description": plan.event_description,
+                "outfit_description": plan.outfit_description,
+                "wardrobe_item_ids": json.loads(plan.wardrobe_items)
+                if plan.wardrobe_items
+                else [],
+                "alternatives": json.loads(plan.alternative_suggestions)
+                if plan.alternative_suggestions
+                else [],
+                "weather_considerations": plan.weather_considerations,
+                "confidence_score": plan.confidence_score,
+            }
+        )
+
+    wardrobe_items = (
+        db.query(WardrobeItem).filter(WardrobeItem.user_id == current_user.id).all()
+    )
+    wardrobe_summary = []
+    for item in wardrobe_items:
+        try:
+            occasions = json.loads(item.occasion) if item.occasion else []
+        except (json.JSONDecodeError, TypeError):
+            occasions = []
+
+        wardrobe_summary.append(
+            {
+                "id": item.id,
+                "category": item.category,
+                "subcategory": item.subcategory,
+                "description": item.description,
+                "color_primary": item.color_primary,
+                "season": item.season,
+                "occasion": occasions,
+            }
+        )
+
+    try:
+        prompt = f"""
+        For the following calendar event, generate an outfit plan using the available wardrobe items. 
+        For the event, provide detailed information for:
+        1. Main outfit description (specific combination and description of wardrobe items mentioning the items, colors, and styles)
+        2. Specific wardrobe item IDs to use
+        3. Alternative suggestions if items aren't suitable
+        4. Weather considerations
+        5. Confidence score (0-100)
+
+        Format your response as a JSON object, where each element corresponds to an event and includes:
+        {{
+            "date": "YYYY-MM-DD",
+            "event_title": "...",
+            "event_description": "...",
+            "outfit_description": "...",
+            "wardrobe_item_ids": [list of item IDs],
+            "alternatives": ["..."],
+            "weather_considerations": "...",
+            "confidence_score": 85
+        }}
+
+        Calendar Event:
+        {event.model_dump()}
+
+        Available wardrobe items:
+        {json.dumps(wardrobe_summary, indent=2)}
+
+        Current outfit plans:
+        {json.dumps(plan_summary, indent=2)}
+
+        Do not enclose your response in a ```json block.
+        """
+
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.3,
+            )
+            print(f"AI response for event: {response.choices[0].message.content}")
+            outfit_plan = json.loads(response.choices[0].message.content)
+
+            # Check if an outfit plan already exists for this specific event
+            existing_plan = (
+                db.query(OutfitPlan)
+                .filter(
+                    OutfitPlan.user_id == current_user.id,
+                    OutfitPlan.date == event_date,
+                    OutfitPlan.event_title == event.title,
+                )
+                .first()
+            )
+
+            if existing_plan:
+                # Update the existing plan with new AI recommendations
+                existing_plan.outfit_description = outfit_plan.get(
+                    "outfit_description", ""
+                )
+                existing_plan.wardrobe_items = json.dumps(
+                    outfit_plan.get("wardrobe_item_ids", [])
+                )
+                existing_plan.alternative_suggestions = json.dumps(
+                    outfit_plan.get("alternatives", [])
+                )
+                existing_plan.weather_considerations = outfit_plan.get(
+                    "weather_considerations", ""
+                )
+                existing_plan.confidence_score = outfit_plan.get("confidence_score", 0)
+                existing_plan.updated_at = datetime.now(timezone.utc)
+                db.commit()
+                db.refresh(existing_plan)
+
+                return {
+                    "success": True,
+                    "data": {
+                        "id": existing_plan.id,
+                        "date": existing_plan.date.strftime("%Y-%m-%d"),
+                        "event_title": existing_plan.event_title,
+                        "event_description": existing_plan.event_description,
+                        "event_location": existing_plan.event_location,
+                        "outfit_description": existing_plan.outfit_description,
+                        "wardrobe_item_ids": json.loads(existing_plan.wardrobe_items)
+                        if existing_plan.wardrobe_items
+                        else [],
+                        "alternatives": json.loads(
+                            existing_plan.alternative_suggestions
+                        )
+                        if existing_plan.alternative_suggestions
+                        else [],
+                        "weather_considerations": existing_plan.weather_considerations,
+                        "confidence_score": existing_plan.confidence_score,
+                        "created_at": existing_plan.created_at.isoformat()
+                        if existing_plan.created_at
+                        else None,
+                        "updated_at": existing_plan.updated_at.isoformat()
+                        if existing_plan.updated_at
+                        else None,
+                    },
+                    "message": "Outfit plan updated successfully with new AI recommendations",
+                }
+            else:
+                # Create a new plan
+                new_plan = OutfitPlan(
+                    user_id=current_user.id,
+                    date=event_date,
+                    event_title=event.title,
+                    event_description=event.description,
+                    outfit_description=outfit_plan.get("outfit_description", ""),
+                    wardrobe_items=json.dumps(outfit_plan.get("wardrobe_item_ids", [])),
+                    alternative_suggestions=json.dumps(
+                        outfit_plan.get("alternatives", [])
+                    ),
+                    weather_considerations=outfit_plan.get(
+                        "weather_considerations", ""
+                    ),
+                    confidence_score=outfit_plan.get("confidence_score", 0),
+                )
+                db.add(new_plan)
+                db.commit()
+                db.refresh(new_plan)
+
+                return {
+                    "success": True,
+                    "data": {
+                        "id": new_plan.id,
+                        "date": new_plan.date.strftime("%Y-%m-%d"),
+                        "event_title": new_plan.event_title,
+                        "event_description": new_plan.event_description,
+                        "event_location": new_plan.event_location,
+                        "outfit_description": new_plan.outfit_description,
+                        "wardrobe_item_ids": json.loads(new_plan.wardrobe_items)
+                        if new_plan.wardrobe_items
+                        else [],
+                        "alternatives": json.loads(new_plan.alternative_suggestions)
+                        if new_plan.alternative_suggestions
+                        else [],
+                        "weather_considerations": new_plan.weather_considerations,
+                        "confidence_score": new_plan.confidence_score,
+                        "created_at": new_plan.created_at.isoformat()
+                        if new_plan.created_at
+                        else None,
+                        "updated_at": new_plan.updated_at.isoformat()
+                        if new_plan.updated_at
+                        else None,
+                    },
+                    "message": "Outfit plan created successfully",
+                }
+        except Exception as e:
+            print(f"Error generating outfits for event: {e}")
+            raise HTTPException(
+                status_code=500, detail=f"Error generating outfit plan: {str(e)}"
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500, detail=f"Error generating outfit plan: {str(e)}"
+        )
+
+
 @router.get("/outfit-plans/single/{plan_id}")
 async def get_outfit_plan(
     plan_id: int,
