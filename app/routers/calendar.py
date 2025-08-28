@@ -52,6 +52,20 @@ class WardrobeAddRequest(BaseModel):
     description: str  # Full description that LLM will process
 
 
+class WardrobeItemCreate(BaseModel):
+    category: str
+    subcategory: Optional[str] = None
+    description: Optional[str] = None
+    color_primary: Optional[str] = None
+    color_secondary: Optional[str] = None
+    brand: Optional[str] = None
+    size: Optional[str] = None
+    season: Optional[str] = None
+    occasion: List[str] = []
+    tags: List[str] = []
+    favorite: bool = False
+
+
 class WardrobeDeleteBatchRequest(BaseModel):
     item_ids: List[int]  # List of wardrobe item IDs to delete
 
@@ -653,15 +667,18 @@ async def get_user_wardrobe(
             )
 
         return {
-            "wardrobe": wardrobe_items,
-            "total_count": total_count,
-            "limit": limit,
-            "offset": offset,
-            "has_more": (offset + len(wardrobe_items)) < total_count,
-            "filters": {
-                "category": category,
-                "season": season,
-                "occasion": occasion,
+            "success": True,
+            "data": {
+                "wardrobe": wardrobe_items,
+                "total_count": total_count,
+                "limit": limit,
+                "offset": offset,
+                "has_more": (offset + len(wardrobe_items)) < total_count,
+                "filters": {
+                    "category": category,
+                    "season": season,
+                    "occasion": occasion,
+                },
             },
             "message": f"Retrieved {len(wardrobe_items)} wardrobe items",
         }
@@ -867,6 +884,59 @@ async def add_wardrobe_items(
         db.rollback()
         raise HTTPException(
             status_code=500, detail=f"Error adding wardrobe items: {str(e)}"
+        )
+
+
+@router.post("/wardrobe/item_add")
+async def add_wardrobe_item(
+    item: WardrobeItemCreate,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """Add a new item to the wardrobe"""
+    try:
+        new_item = WardrobeItem(
+            user_id=current_user.id,
+            category=item.category,
+            subcategory=item.subcategory,
+            description=item.description,
+            color_primary=item.color_primary,
+            color_secondary=item.color_secondary,
+            brand=item.brand,
+            size=item.size,
+            season=item.season,
+            occasion=json.dumps(item.occasion),
+            tags=json.dumps(item.tags),
+            is_favorite=item.favorite,
+        )
+
+        db.add(new_item)
+        db.commit()
+        db.refresh(new_item)
+
+        return {
+            "success": True,
+            "data": {
+                "id": new_item.id,
+                "category": new_item.category,
+                "subcategory": new_item.subcategory,
+                "description": new_item.description,
+                "color_primary": new_item.color_primary,
+                "color_secondary": new_item.color_secondary,
+                "brand": new_item.brand,
+                "size": new_item.size,
+                "season": new_item.season,
+                "occasion": json.loads(new_item.occasion),
+                "tags": json.loads(new_item.tags),
+                "is_favorite": new_item.is_favorite,
+            },
+            "message": "Successfully added new wardrobe item",
+        }
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500, detail=f"Error adding wardrobe item: {str(e)}"
         )
 
 
