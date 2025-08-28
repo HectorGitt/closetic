@@ -1280,9 +1280,9 @@ async def generate_monthly_outfit_plans(
                     }
                 )
 
-        except HttpError as error:
+        except HttpError as e:
             # If Google Calendar API fails, use fallback events
-            print(f"Google Calendar API error: {error}")
+            print(f"Google Calendar API error: {e}")
             calendar_events = [
                 {
                     "date": f"{year}-{month:02d}-15",
