@@ -16,7 +16,7 @@ from ..auth import get_current_active_user
 from pydantic import BaseModel
 from typing import List, Optional
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import func, desc
 
 
@@ -79,9 +79,9 @@ class UserResponse(BaseModel):
     username: str
     email: str
     full_name: Optional[str]
-    is_active: bool
-    pricing_tier: str
-    subscription_status: str
+    is_active: bool = True
+    pricing_tier: str = "free"
+    subscription_status: str = "active"
     style_preference: Optional[str]
     color_preferences: Optional[str]
     body_type: Optional[str]
@@ -91,8 +91,12 @@ class UserResponse(BaseModel):
     country: Optional[str]
     created_at: datetime
     updated_at: Optional[datetime]
-    average_fashion_score: float
-    total_scored_analyses: int
+    average_fashion_score: float = 0.0
+    total_scored_analyses: int = 0
+
+
+class UserStatusUpdate(BaseModel):
+    is_active: bool
 
 
 class UserListResponse(BaseModel):
@@ -173,12 +177,18 @@ async def get_analytics(
         .all()
     )
 
-    return AnalyticsData(
+    analytics = AnalyticsData(
         total_analyses=total_analyses,
         popular_styles=[f"{item[0]}: {item[1]}" for item in analysis_breakdown[:5]],
         common_issues=[f"{item[0]}: {item[1]}" for item in activity_breakdown[:5]],
         user_satisfaction=8.5,  # Default satisfaction score
     )
+
+    return {
+        "success": True,
+        "data": analytics.model_dump(),
+        "message": "Analytics retrieved successfully",
+    }
 
 
 @router.post("/feedback")
@@ -226,7 +236,15 @@ async def record_feedback(
                     analytics_data["issue_counts"].get(issue, 0) + 1
                 )
 
-    return {"message": "Feedback recorded successfully"}
+    return {
+        "success": True,
+        "data": {
+            "rating": user_rating,
+            "analysis_type": analysis_result.get("type", "unknown"),
+            "recorded_at": datetime.now(timezone.utc).isoformat(),
+        },
+        "message": "Feedback recorded successfully",
+    }
 
 
 @router.get("/trends")
@@ -242,7 +260,7 @@ async def get_fashion_trends(
     log_user_activity(db, current_user, "trends_view", {})
 
     # Static/dummy data for demo purposes
-    return {
+    trends_data = {
         "trending_styles": [
             "Minimalist tailoring",
             "Y2K revival",
@@ -274,6 +292,12 @@ async def get_fashion_trends(
             "Return of bold prints",
             "Expansion of circular fashion economy",
         ],
+    }
+
+    return {
+        "success": True,
+        "data": trends_data,
+        "message": "Fashion trends retrieved successfully",
     }
 
 
@@ -351,7 +375,11 @@ async def get_style_database(
         },
     }
 
-    return style_database
+    return {
+        "success": True,
+        "data": style_database,
+        "message": "Style database retrieved successfully",
+    }
 
 
 @router.get("/user-insights")
@@ -407,7 +435,11 @@ async def get_user_insights(
         ],
     }
 
-    return insights
+    return {
+        "success": True,
+        "data": insights,
+        "message": "User insights retrieved successfully",
+    }
 
 
 # ===== USER MANAGEMENT ENDPOINTS =====
@@ -601,7 +633,7 @@ async def update_user(
     for field, value in update_data.items():
         setattr(user, field, value)
 
-    user.updated_at = datetime.utcnow()
+    user.updated_at = datetime.now(timezone.utc)
 
     db.commit()
     db.refresh(user)
@@ -642,17 +674,25 @@ async def delete_user(
 
     # Soft delete by deactivating instead of hard delete
     user.is_active = False
-    user.updated_at = datetime.utcnow()
+    user.updated_at = datetime.now(timezone.utc)
 
     db.commit()
 
-    return {"message": f"User {user.username} has been deactivated"}
+    return {
+        "success": True,
+        "data": {
+            "user_id": user_id,
+            "username": user.username,
+            "deactivated_at": user.updated_at.isoformat(),
+        },
+        "message": f"User {user.username} has been deactivated",
+    }
 
 
 @router.patch("/users/{user_id}/status")
 async def update_user_status(
     user_id: int,
-    is_active: bool,
+    status_update: UserStatusUpdate,
     current_user: User = Depends(get_admin_user),
     db: Session = Depends(get_db),
 ):
@@ -662,13 +702,22 @@ async def update_user_status(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    user.is_active = is_active
-    user.updated_at = datetime.utcnow()
+    user.is_active = status_update.is_active
+    user.updated_at = datetime.now(timezone.utc)
 
     db.commit()
 
-    status_text = "activated" if is_active else "deactivated"
-    return {"message": f"User {user.username} has been {status_text}"}
+    status_text = "activated" if status_update.is_active else "deactivated"
+    return {
+        "success": True,
+        "data": {
+            "user_id": user_id,
+            "username": user.username,
+            "is_active": status_update.is_active,
+            "updated_at": user.updated_at.isoformat(),
+        },
+        "message": f"User {user.username} has been {status_text}",
+    }
 
 
 # ===== USER ACTIVITY ENDPOINTS =====
@@ -839,7 +888,7 @@ async def get_user_stats(
         .all()
     )
 
-    return {
+    user_stats = {
         "user_id": user_id,
         "username": user.username,
         "total_activities": sum(count for _, count in activity_counts),
@@ -857,4 +906,10 @@ async def get_user_stats(
             }
             for activity in recent_activities
         ],
+    }
+
+    return {
+        "success": True,
+        "data": user_stats,
+        "message": f"User statistics retrieved successfully for {user.username}",
     }
