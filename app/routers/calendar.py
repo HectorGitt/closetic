@@ -1439,6 +1439,13 @@ async def generate_monthly_outfit_plans(
         )
 
 
+@limit_ai_usage(
+    reset_period="monthly",
+    free_limit=1,
+    spotlight_limit=5,
+    elite_limit=20,
+    icon_limit=-1,
+)
 @router.post("/outfit-plans/single")
 async def generate_outfit_plan_for_event(
     event: CalendarEvent,

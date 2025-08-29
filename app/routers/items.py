@@ -320,6 +320,13 @@ async def analyze_camera_capture(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@limit_ai_usage(
+    reset_period="monthly",
+    free_limit=1,
+    spotlight_limit=5,
+    elite_limit=20,
+    icon_limit=-1,
+)
 @router.get("/style-suggestions/{style_type}")
 async def get_style_suggestions(
     style_type: str,
