@@ -192,9 +192,9 @@ async def fashion_analyze_page(
 @router.post("/upload-analyze", response_model=FashionAnalysisResponse)
 @limit_ai_usage(
     reset_period="monthly",
-    free_limit=1,
-    spotlight_limit=5,
-    elite_limit=20,
+    free_limit=3,
+    spotlight_limit=12,
+    elite_limit=40,
     icon_limit=-1,
 )
 async def upload_and_analyze(
@@ -263,9 +263,9 @@ async def upload_and_analyze(
 @router.post("/camera-analyze", response_model=FashionAnalysisResponse)
 @limit_ai_usage(
     reset_period="monthly",
-    free_limit=0,
-    spotlight_limit=5,
-    elite_limit=20,
+    free_limit=2,
+    spotlight_limit=10,
+    elite_limit=30,
     icon_limit=-1,
 )
 async def analyze_camera_capture(
@@ -323,9 +323,9 @@ async def analyze_camera_capture(
 @router.get("/style-suggestions/{style_type}")
 @limit_ai_usage(
     reset_period="monthly",
-    free_limit=1,
-    spotlight_limit=5,
-    elite_limit=20,
+    free_limit=5,
+    spotlight_limit=20,
+    elite_limit=60,
     icon_limit=-1,
 )
 async def get_style_suggestions(
@@ -699,9 +699,9 @@ def update_user_average_score(db: Session, user_id: int, analysis_result: dict):
 @router.post("/chatbot")
 @limit_ai_usage(
     reset_period="daily",
-    free_limit=5,
-    spotlight_limit=20,
-    elite_limit=50,
+    free_limit=8,
+    spotlight_limit=30,
+    elite_limit=75,
     icon_limit=-1,
 )
 async def fashion_chatbot(

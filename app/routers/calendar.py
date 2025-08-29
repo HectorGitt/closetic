@@ -692,9 +692,9 @@ async def get_user_wardrobe(
 @router.post("/wardrobe")
 @limit_ai_usage(
     reset_period="monthly",
-    free_limit=1,
-    spotlight_limit=5,
-    elite_limit=20,
+    free_limit=2,
+    spotlight_limit=10,
+    elite_limit=30,
     icon_limit=-1,
 )
 async def add_wardrobe_items(
@@ -1120,9 +1120,9 @@ async def get_monthly_outfit_plans(
 @router.post("/outfit-plans")
 @limit_ai_usage(
     reset_period="monthly",
-    free_limit=1,
-    spotlight_limit=5,
-    elite_limit=20,
+    free_limit=2,
+    spotlight_limit=8,
+    elite_limit=25,
     icon_limit=-1,
 )
 async def generate_monthly_outfit_plans(
@@ -1442,9 +1442,9 @@ async def generate_monthly_outfit_plans(
 @router.post("/outfit-plans/single")
 @limit_ai_usage(
     reset_period="monthly",
-    free_limit=1,
-    spotlight_limit=5,
-    elite_limit=20,
+    free_limit=3,
+    spotlight_limit=12,
+    elite_limit=40,
     icon_limit=-1,
 )
 async def generate_outfit_plan_for_event(

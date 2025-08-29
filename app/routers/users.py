@@ -33,7 +33,7 @@ def get_tier_features(tier: str) -> Dict[str, Any]:
             "max_outfit_plans_per_month": 5,
             "max_wardrobe_items": 10,
             "ai_calls_per_day": 1,  # New: AI usage limit
-            "calendar_integration": False,
+            "calendar_integration": True,
             "ai_styling_advice": False,
             "weather_integration": False,
             "outfit_alternatives": False,
@@ -43,7 +43,7 @@ def get_tier_features(tier: str) -> Dict[str, Any]:
         },
         "spotlight": {
             "name": "Spotlight",
-            "max_upload_analyze": 5,
+            "max_upload_analyze": 50,
             "max_outfit_plans_per_month": 30,
             "max_wardrobe_items": 30,
             "ai_calls_per_day": 10,  # New: AI usage limit
@@ -441,9 +441,9 @@ async def profile_page(
 @router.put("/preferences")
 @limit_ai_usage(
     reset_period="monthly",
-    free_limit=1,
-    spotlight_limit=10,
-    elite_limit=30,
+    free_limit=2,
+    spotlight_limit=8,
+    elite_limit=25,
     icon_limit=-1,
 )
 async def update_preferences(
@@ -728,9 +728,9 @@ async def get_style_guide_history(
 @router.post("/analyze-personal")
 @limit_ai_usage(
     reset_period="monthly",
-    free_limit=1,
+    free_limit=2,
     spotlight_limit=10,
-    elite_limit=50,
+    elite_limit=35,
     icon_limit=-1,
 )
 async def personal_fashion_analysis(
@@ -1105,9 +1105,9 @@ async def get_fashion_history(
 @router.get("/wardrobe-builder/{username}")
 @limit_ai_usage(
     reset_period="monthly",
-    free_limit=1,
-    spotlight_limit=5,
-    elite_limit=20,
+    free_limit=2,
+    spotlight_limit=8,
+    elite_limit=25,
     icon_limit=-1,
 )
 async def wardrobe_builder(
