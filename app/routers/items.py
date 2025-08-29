@@ -478,45 +478,66 @@ async def get_fashion_leaderboard(
     limit: int = 10,
     db: Session = Depends(get_db),
 ):
-    """Get fashion analysis leaderboard (no authentication required)"""
+    """Get fashion analysis leaderboard (fake data for demo)"""
     try:
-        from sqlalchemy import desc
-        from ..models import User
-        from datetime import datetime
+        # Comment out real database query
+        # from sqlalchemy import desc
+        # from ..models import User
+        # from datetime import datetime
 
-        # Query to get users with most fashion analysis activities
-        leaderboard_query = (
-            db.query(
-                User.username,
-                User.full_name,
-                User.total_scored_analyses,
-                User.updated_at,
-            )
-            .filter(
-                User.total_scored_analyses.isnot(None),
-                User.total_scored_analyses > 0,
-            )
-            .order_by(desc(User.total_scored_analyses))
-            .limit(limit)
-        )
+        # # Query to get users with most fashion analysis activities
+        # leaderboard_query = (
+        #     db.query(
+        #         User.username,
+        #         User.full_name,
+        #         User.total_scored_analyses,
+        #         User.updated_at,
+        #     )
+        #     .filter(
+        #         User.total_scored_analyses.isnot(None),
+        #         User.total_scored_analyses > 0,
+        #     )
+        #     .order_by(desc(User.total_scored_analyses))
+        #     .limit(limit)
+        # )
 
-        results = leaderboard_query.all()
+        # results = leaderboard_query.all()
+
+        # Use fake data with high values
+        fake_users = [
+            {
+                "username": "sarah_style",
+                "full_name": "Sarah Johnson",
+                "analysis_count": 245,
+                "badge": get_user_badge(245),
+            },
+            {
+                "username": "fashion_queen",
+                "full_name": "Emma Rodriguez",
+                "analysis_count": 198,
+                "badge": get_user_badge(198),
+            },
+            {
+                "username": "trend_master",
+                "full_name": "Alex Chen",
+                "analysis_count": 187,
+                "badge": get_user_badge(187),
+            },
+        ]
 
         # Format the leaderboard data
         leaderboard = []
-        for rank, (username, full_name, analysis_count, last_activity) in enumerate(
-            results, 1
-        ):
+        for rank, user_data in enumerate(fake_users[:limit], 1):
+            from datetime import datetime, timezone
+
             leaderboard.append(
                 {
                     "rank": rank,
-                    "username": username,
-                    "display_name": full_name or username,
-                    "analysis_count": analysis_count or 0,
-                    "last_activity": last_activity.isoformat()
-                    if last_activity
-                    else None,
-                    "badge": get_user_badge(analysis_count or 0),
+                    "username": user_data["username"],
+                    "display_name": user_data["full_name"],
+                    "analysis_count": user_data["analysis_count"],
+                    "last_activity": datetime.now(timezone.utc).isoformat(),
+                    "badge": user_data["badge"],
                 }
             )
 
@@ -541,52 +562,61 @@ async def get_fashion_icon_leaderboard(
     min_analyses: int = 1,
     db: Session = Depends(get_db),
 ):
-    """Get fashion icon leaderboard based on highest average scores (no authentication required)"""
+    """Get fashion icon leaderboard based on highest average scores (fake data for demo)"""
     try:
-        from sqlalchemy import desc
-        from ..models import User
-        from datetime import datetime
+        # Comment out real database query
+        # from sqlalchemy import desc
+        # from ..models import User
+        # from datetime import datetime
 
-        # Query to get users with highest average scores from User table
-        icon_query = (
-            db.query(
-                User.username,
-                User.full_name,
-                User.average_fashion_score,
-                User.total_scored_analyses,
-                User.updated_at,
-            )
-            .filter(
-                User.average_fashion_score.isnot(None),
-                User.average_fashion_score > 0,
-                User.total_scored_analyses >= min_analyses,
-            )
-            .order_by(desc(User.average_fashion_score))
-            .limit(1)  # Only get the top fashion icon
-        )
+        # # Query to get users with highest average scores from User table
+        # icon_query = (
+        #     db.query(
+        #         User.username,
+        #         User.full_name,
+        #         User.average_fashion_score,
+        #         User.total_scored_analyses,
+        #         User.updated_at,
+        #     )
+        #     .filter(
+        #         User.average_fashion_score.isnot(None),
+        #         User.average_fashion_score > 0,
+        #         User.total_scored_analyses >= min_analyses,
+        #     )
+        #     .order_by(desc(User.average_fashion_score))
+        #     .limit(1)  # Only get the top fashion icon
+        # )
 
-        result = icon_query.first()
+        # result = icon_query.first()
 
-        if not result:
-            return {
-                "success": True,
-                "data": {
-                    "fashion_icon": None,
-                    "message": f"No qualifying users found with valid scores (minimum {min_analyses} analyses required)",
-                },
-                "message": "No fashion icon found",
-            }
+        # if not result:
+        #     return {
+        #         "success": True,
+        #         "data": {
+        #             "fashion_icon": None,
+        #             "message": f"No qualifying users found with valid scores (minimum {min_analyses} analyses required)",
+        #         },
+        #         "message": "No fashion icon found",
+        #     }
 
-        username, full_name, avg_score, total_analyses, last_updated = result
+        # username, full_name, avg_score, total_analyses, last_updated = result
+
+        # Use fake data with high scores
+        fake_fashion_icon = {
+            "username": "sarah_style",
+            "full_name": "Sarah Johnson",
+            "avg_score": 96.8,
+            "total_analyses": 245,
+        }
 
         # Format the fashion icon data
         fashion_icon = {
-            "username": username,
-            "display_name": full_name or username,
-            "total_scored_analyses": total_analyses,
-            "avg_overall_score": round(float(avg_score), 2),
-            "last_updated": last_updated.isoformat() if last_updated else None,
-            "icon": get_fashion_icon_badge(avg_score),
+            "username": fake_fashion_icon["username"],
+            "display_name": fake_fashion_icon["full_name"],
+            "total_scored_analyses": fake_fashion_icon["total_analyses"],
+            "avg_overall_score": round(float(fake_fashion_icon["avg_score"]), 2),
+            "last_updated": datetime.now(timezone.utc).isoformat(),
+            "icon": get_fashion_icon_badge(fake_fashion_icon["avg_score"]),
             "title": "🌟 Fashion Icon of the Month",
         }
 
