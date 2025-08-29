@@ -96,10 +96,13 @@ class UserResponse(BaseModel):
 
 
 class UserListResponse(BaseModel):
-    users: List[UserResponse]
-    total: int
-    page: int
-    per_page: int
+    class DataModel(BaseModel):
+        users: List[UserResponse]
+        total: int
+        page: int
+        per_page: int
+
+    data: DataModel
 
 
 class ActivityResponse(BaseModel):
@@ -476,7 +479,12 @@ async def list_users(
         )
 
     return UserListResponse(
-        users=user_responses, total=total, page=page, per_page=per_page
+        data={
+            "users": user_responses,
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+        }
     )
 
 
