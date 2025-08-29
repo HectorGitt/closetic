@@ -175,6 +175,26 @@ class OutfitPlan(Base):
     user = relationship("User", back_populates="outfit_plans")
 
 
+""" class CalendarEvent(Base):
+    __tablename__ = "calendar_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    title = Column(String(200), nullable=False)
+    description = Column(Text)
+    location = Column(String(200))
+    start_time = Column(DateTime(timezone=True), nullable=False)
+    end_time = Column(DateTime(timezone=True), nullable=False)
+    provider = Column(String(100), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Relationships
+    user = relationship("User", back_populates="calendar_events")
+    outfit_plans = relationship("OutfitPlan", back_populates="calendar_event")
+ """
+
+
 class PersonalStyleGuide(Base):
     __tablename__ = "personal_style_guides"
 

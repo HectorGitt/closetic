@@ -689,6 +689,7 @@ async def get_user_wardrobe(
         )
 
 
+@router.post("/wardrobe")
 @limit_ai_usage(
     reset_period="monthly",
     free_limit=1,
@@ -696,7 +697,6 @@ async def get_user_wardrobe(
     elite_limit=20,
     icon_limit=-1,
 )
-@router.post("/wardrobe")
 async def add_wardrobe_items(
     wardrobe_data: WardrobeAddRequest,
     client=Depends(get_openai_client),
@@ -1117,6 +1117,7 @@ async def get_monthly_outfit_plans(
         )
 
 
+@router.post("/outfit-plans")
 @limit_ai_usage(
     reset_period="monthly",
     free_limit=1,
@@ -1124,7 +1125,6 @@ async def get_monthly_outfit_plans(
     elite_limit=20,
     icon_limit=-1,
 )
-@router.post("/outfit-plans")
 async def generate_monthly_outfit_plans(
     client=Depends(get_openai_client),
     db: Session = Depends(get_db),
@@ -1439,6 +1439,7 @@ async def generate_monthly_outfit_plans(
         )
 
 
+@router.post("/outfit-plans/single")
 @limit_ai_usage(
     reset_period="monthly",
     free_limit=1,
@@ -1446,7 +1447,6 @@ async def generate_monthly_outfit_plans(
     elite_limit=20,
     icon_limit=-1,
 )
-@router.post("/outfit-plans/single")
 async def generate_outfit_plan_for_event(
     event: CalendarEvent,
     db: Session = Depends(get_db),

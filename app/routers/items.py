@@ -189,6 +189,7 @@ async def fashion_analyze_page(
     )
 
 
+@router.post("/upload-analyze", response_model=FashionAnalysisResponse)
 @limit_ai_usage(
     reset_period="monthly",
     free_limit=1,
@@ -196,7 +197,6 @@ async def fashion_analyze_page(
     elite_limit=20,
     icon_limit=-1,
 )
-@router.post("/upload-analyze", response_model=FashionAnalysisResponse)
 async def upload_and_analyze(
     request: Request,
     file: UploadFile = File(...),
@@ -260,6 +260,7 @@ async def upload_and_analyze(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/camera-analyze", response_model=FashionAnalysisResponse)
 @limit_ai_usage(
     reset_period="monthly",
     free_limit=0,
@@ -267,7 +268,6 @@ async def upload_and_analyze(
     elite_limit=20,
     icon_limit=-1,
 )
-@router.post("/camera-analyze", response_model=FashionAnalysisResponse)
 async def analyze_camera_capture(
     request: Request,
     file: UploadFile = File(...),
@@ -320,6 +320,7 @@ async def analyze_camera_capture(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/style-suggestions/{style_type}")
 @limit_ai_usage(
     reset_period="monthly",
     free_limit=1,
@@ -327,7 +328,6 @@ async def analyze_camera_capture(
     elite_limit=20,
     icon_limit=-1,
 )
-@router.get("/style-suggestions/{style_type}")
 async def get_style_suggestions(
     style_type: str,
     client=Depends(get_openai_client),
