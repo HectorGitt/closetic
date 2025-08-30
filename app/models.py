@@ -146,6 +146,8 @@ class WardrobeItem(Base):
     purchase_date = Column(DateTime(timezone=True))
     price = Column(Float)
     is_favorite = Column(Boolean, default=False)
+    last_worn_date = Column(DateTime(timezone=True))
+    is_available = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -245,3 +247,34 @@ def create_tables():
 if __name__ == "__main__":
     create_tables()
     print("Database tables created successfully!")
+
+    # Add new columns to existing wardrobe_items table
+    try:
+        from sqlalchemy import text
+
+        with engine.connect() as conn:
+            # Add last_worn_date column if it doesn't exist
+            try:
+                conn.execute(
+                    text(
+                        "ALTER TABLE wardrobe_items ADD COLUMN last_worn_date DATETIME"
+                    )
+                )
+                print("Added last_worn_date column to wardrobe_items table")
+            except Exception as e:
+                print(f"last_worn_date column may already exist: {e}")
+
+            # Add is_available column if it doesn't exist
+            try:
+                conn.execute(
+                    text(
+                        "ALTER TABLE wardrobe_items ADD COLUMN is_available BOOLEAN DEFAULT 1"
+                    )
+                )
+                print("Added is_available column to wardrobe_items table")
+            except Exception as e:
+                print(f"is_available column may already exist: {e}")
+
+            conn.commit()
+    except Exception as e:
+        print(f"Error adding columns: {e}")

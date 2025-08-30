@@ -70,21 +70,8 @@ class WardrobeDeleteBatchRequest(BaseModel):
     item_ids: List[int]  # List of wardrobe item IDs to delete
 
 
-class WardrobeItemResponse(BaseModel):
-    id: int
-    category: str
-    subcategory: Optional[str]
-    description: Optional[str]
-    color_primary: Optional[str]
-    color_secondary: Optional[str]
-    brand: Optional[str]
-    size: Optional[str]
-    season: Optional[str]
-    occasion: List[str]
-    image_url: Optional[str]
-    tags: List[str]
-    is_favorite: bool
-    created_at: datetime
+class WardrobeWornRequest(BaseModel):
+    date: str  # Date in YYYY-MM-DD format
 
 
 class MonthlyOutfitPlan(BaseModel):
@@ -161,6 +148,15 @@ def refresh_google_token_if_needed(token, db, force_refresh=False):
         except Exception as e:
             return creds, False, f"Error refreshing token: {str(e)}"
     return creds, False, None
+
+
+def _to_rfc3339_z(dt: datetime) -> str:
+    if getattr(dt, "tzinfo", None) is None or dt.tzinfo.utcoffset(dt) is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    else:
+        dt = dt.astimezone(timezone.utc)
+    # Remove +00:00 and use trailing Z which Google expects
+    return dt.replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
 @router.get("/google-auth-url")
@@ -505,15 +501,6 @@ async def get_user_events(
         # Build the Calendar API service
         service = build("calendar", "v3", credentials=creds)
 
-        # Helper: format a datetime to RFC3339 with trailing 'Z' (no '+00:00Z')
-        def _to_rfc3339_z(dt: datetime) -> str:
-            if getattr(dt, "tzinfo", None) is None or dt.tzinfo.utcoffset(dt) is None:
-                dt = dt.replace(tzinfo=timezone.utc)
-            else:
-                dt = dt.astimezone(timezone.utc)
-            # Remove +00:00 and use trailing Z which Google expects
-            return dt.replace(microsecond=0).isoformat().replace("+00:00", "Z")
-
         # Set default date range if not provided. Caller-supplied dates are assumed
         # to be in a valid format; we only ensure our defaults are RFC3339 Z.
         if not start_date:
@@ -611,6 +598,102 @@ async def get_user_events(
         )
 
 
+@router.put("/wardrobe/{item_id}/worn")
+async def mark_wardrobe_item_worn(
+    item_id: int,
+    worn_data: WardrobeWornRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_active_user),
+):
+    """Toggle wardrobe item as worn on a specific date"""
+    try:
+        # Find the wardrobe item
+        wardrobe_item = (
+            db.query(WardrobeItem)
+            .filter(WardrobeItem.id == item_id, WardrobeItem.user_id == current_user.id)
+            .first()
+        )
+
+        if not wardrobe_item:
+            raise HTTPException(
+                status_code=404,
+                detail="Wardrobe item not found or you don't have permission to access it",
+            )
+
+        # Parse the date (supports both date-only and full datetime formats)
+        try:
+            if wardrobe_item.is_available:
+                # Try parsing as full datetime first, then fall back to date-only
+                try:
+                    # Simple parsing - just handle the date as-is
+                    worn_date = datetime.fromisoformat(
+                        worn_data.date.replace("Z", "+00:00")
+                    )
+                    print("Parsed as full datetime:", worn_date)
+                    if worn_date.tzinfo is None:
+                        worn_date = worn_date.replace(tzinfo=timezone.utc)
+                    print("Worn date with timezone:", worn_date)
+                except ValueError:
+                    # Fall back to date-only parsing
+                    worn_date = datetime.strptime(worn_data.date, "%Y-%m-%d")
+                    worn_date = worn_date.replace(tzinfo=timezone.utc)
+
+                wardrobe_item.last_worn_date = worn_date
+                wardrobe_item.is_available = False
+            else:
+                wardrobe_item.is_available = True
+
+        except ValueError:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid date format. Please use YYYY-MM-DD format",
+            )
+
+        # Update the item
+        wardrobe_item.updated_at = datetime.now(timezone.utc)
+
+        db.commit()
+        db.refresh(wardrobe_item)
+
+        print("Wardrobe item updated:", wardrobe_item.last_worn_date)
+
+        # Log activity
+        log_user_activity(
+            db=db,
+            user=current_user,
+            activity_type="wardrobe_item_worn",
+            activity_data={
+                "item_id": item_id,
+                "worn_date": worn_data.date,
+                "category": wardrobe_item.category,
+                "description": wardrobe_item.description[:100]
+                if wardrobe_item.description
+                else "",
+            },
+        )
+
+        return {
+            "success": True,
+            "data": {
+                "id": wardrobe_item.id,
+                "last_worn_date": _to_rfc3339_z(wardrobe_item.last_worn_date)
+                if wardrobe_item.last_worn_date
+                else None,
+                "is_available": wardrobe_item.is_available,
+                "updated_at": wardrobe_item.updated_at.isoformat(),
+            },
+            "message": f"Successfully marked {wardrobe_item.description[:50]}... as worn on {worn_data.date}",
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500, detail=f"Error marking wardrobe item as worn: {str(e)}"
+        )
+
+
 @router.get("/wardrobe")
 async def get_user_wardrobe(
     category: Optional[str] = None,
@@ -662,7 +745,13 @@ async def get_user_wardrobe(
                     "image_url": item.image_url,
                     "tags": tags_list,
                     "is_favorite": item.is_favorite,
-                    "created_at": item.created_at.isoformat(),
+                    "last_worn_date": _to_rfc3339_z(item.last_worn_date)
+                    if item.last_worn_date
+                    else None,
+                    "is_available": item.is_available,
+                    "created_at": _to_rfc3339_z(item.created_at)
+                    if item.created_at
+                    else None,
                 }
             )
 
@@ -854,6 +943,10 @@ async def add_wardrobe_items(
                     "season": new_item.season,
                     "occasion": json.loads(new_item.occasion),
                     "tags": json.loads(new_item.tags),
+                    "last_worn_date": _to_rfc3339_z(new_item.last_worn_date)
+                    if new_item.last_worn_date
+                    else None,
+                    "is_available": new_item.is_available,
                 }
             )
 
@@ -929,6 +1022,10 @@ async def add_wardrobe_item(
                 "occasion": json.loads(new_item.occasion),
                 "tags": json.loads(new_item.tags),
                 "is_favorite": new_item.is_favorite,
+                "last_worn_date": _to_rfc3339_z(new_item.last_worn_date)
+                if new_item.last_worn_date
+                else None,
+                "is_available": new_item.is_available,
             },
             "message": "Successfully added new wardrobe item",
         }
@@ -1085,10 +1182,10 @@ async def get_monthly_outfit_plans(
                     "alternatives": alternatives,
                     "weather_considerations": plan.weather_considerations,
                     "confidence_score": plan.confidence_score,
-                    "created_at": plan.created_at.isoformat()
+                    "created_at": _to_rfc3339_z(plan.created_at)
                     if plan.created_at
                     else None,
-                    "updated_at": plan.updated_at.isoformat()
+                    "updated_at": _to_rfc3339_z(plan.updated_at)
                     if plan.updated_at
                     else None,
                 }
