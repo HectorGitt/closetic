@@ -490,7 +490,6 @@ async def get_user_events(
         )
 
         # Refresh token if needed
-        print("Checking if token needs refresh..., ", creds.expired)
         if creds.expired and creds.refresh_token:
             creds, refreshed, error = refresh_google_token_if_needed(token, db)
             if error:
@@ -1270,13 +1269,26 @@ async def generate_monthly_outfit_plans(
 
         # Get user's wardrobe items
         wardrobe_items = (
-            db.query(WardrobeItem).filter(WardrobeItem.user_id == current_user.id).all()
+            db.query(WardrobeItem)
+            .filter(WardrobeItem.user_id == current_user.id, WardrobeItem.is_available)
+            .all()
         )
 
         if not wardrobe_items:
+            if (
+                db.query(WardrobeItem)
+                .filter(WardrobeItem.user_id == current_user.id)
+                .all()
+            ):
+                detail = "No available wardrobe items found, Clean up your closet"
+            else:
+                detail = (
+                    "No wardrobe items found. Please add items to your wardrobe first."
+                )
+
             raise HTTPException(
                 status_code=400,
-                detail="No wardrobe items found. Please add items to your wardrobe first.",
+                detail=detail,
             )
 
         # Fetch real calendar events for the month from Google Calendar API
@@ -1598,8 +1610,13 @@ async def generate_outfit_plan_for_event(
         )
 
     wardrobe_items = (
-        db.query(WardrobeItem).filter(WardrobeItem.user_id == current_user.id).all()
+        db.query(WardrobeItem)
+        .filter(WardrobeItem.user_id == current_user.id, WardrobeItem.is_available)
+        .all()
     )
+    if not wardrobe_items:
+        raise HTTPException(status_code=400, detail="No available wardrobe items found")
+
     wardrobe_summary = []
     for item in wardrobe_items:
         try:
